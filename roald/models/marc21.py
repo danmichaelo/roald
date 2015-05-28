@@ -162,12 +162,14 @@ class Marc21(object):
                 with xml.datafield(tag=tag, ind1=' ', ind2=' '):
                     xml.subfield(rel['prefLabel']['nb'], code='a')
                     xml.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
+                    xml.subfield(value, code='0')
 
             for value in self.narrower.get(concept['id'], []):
                 rel = concepts[value]
                 with xml.datafield(tag=tag, ind1=' ', ind2=' '):
                     xml.subfield(rel['prefLabel']['nb'], code='a')
                     xml.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
+                    xml.subfield(value, code='0')
 
             for value in concept.get('related', []):
                 rel = concepts[value]
@@ -179,6 +181,7 @@ class Marc21(object):
                 }[rel['type']]
                 with xml.datafield(tag=tag, ind1=' ', ind2=' '):
                     xml.subfield(rel['prefLabel']['nb'], code='a')
+                    xml.subfield(value, code='0')
 
             # 680 Notes
             for value in concept.get('note', []):
