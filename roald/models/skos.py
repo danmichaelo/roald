@@ -10,7 +10,7 @@ class Skos(object):
     """
 
     def __init__(self):
-        super(Marc21, self).__init__()
+        super(Skos, self).__init__()
 
     def convert(self, concepts):
         pass

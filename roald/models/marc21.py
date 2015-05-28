@@ -55,7 +55,7 @@ class Marc21(object):
             xml.controlfield('NoOU', tag='003')
 
             # 005 Date of creation
-            xml.controlfield(modified.strftime('%Y%m%d%H%%M%S.0'), tag='005')
+            xml.controlfield(modified.strftime('%Y%m%d%H%M%S.0'), tag='005')
 
             # 008 Blablabla
             field008 = '{created}|||a|z||||||          || a||     d'.format(created=created.strftime('%y%m%d'))
