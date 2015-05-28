@@ -10,7 +10,7 @@ eksportere som MARC21XML og RDF/SKOS:
 ```python
 from roald import Roald
 roald = Roald()
-roald.importRoald2('./riidata')
+roald.importRoald2('./riidata/')
 roald.save('realfagstermer.json')
 roald.exportMarc21('realfagstermer.marc21.xml')
 roald.exportRdfSkos('realfagstermer.ttl')

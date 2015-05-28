@@ -2,7 +2,7 @@ from roald import Roald
 roald = Roald()
 
 print 'Importing Roald 2 files'
-roald.importRoald2('./riidata')
+roald.importRoald2('./riidata/')
 
 print 'Saving JSON'
 roald.save('realfagstermer.json')
