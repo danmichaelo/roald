@@ -29,8 +29,9 @@ class Marc21(object):
     def convertConcept(self, concept, concepts):
 
         xml = self.xml
-
         conceptType = concept.get('type')
+
+        agency = 'NoOU'
 
         if concept.get('created'):
             created = isodate.parse_datetime(concept.get('created'))
@@ -52,7 +53,7 @@ class Marc21(object):
             xml.controlfield(concept.get('id'), tag='001')
 
             # 003 MARC code for the agency whose system control number is contained in field 001 (Control Number).
-            xml.controlfield('NoOU', tag='003')
+            xml.controlfield(agency, tag='003')
 
             # 005 Date of creation
             xml.controlfield(modified.strftime('%Y%m%d%H%M%S.0'), tag='005')
@@ -67,9 +68,9 @@ class Marc21(object):
 
             # 040 Cataloging source
             with xml.datafield(tag='040', ind1=' ', ind2=' '):
-                xml.subfield('NoOU', code='a')     # Original cataloging agency
+                xml.subfield(agency, code='a')     # Original cataloging agency
                 xml.subfield('nor', code='b')      # Language of cataloging
-                xml.subfield('NoOU', code='c')     # Transcribing agency
+                xml.subfield(agency, code='c')     # Transcribing agency
                 xml.subfield('noubomn', code='f')  # Subject heading/thesaurus
 
             # 083 DDC number
@@ -162,14 +163,14 @@ class Marc21(object):
                 with xml.datafield(tag=tag, ind1=' ', ind2=' '):
                     xml.subfield(rel['prefLabel']['nb'], code='a')
                     xml.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
-                    xml.subfield(value, code='0')
+                    xml.subfield('({}){}'.format(agency, value), code='0')
 
             for value in self.narrower.get(concept['id'], []):
                 rel = concepts[value]
                 with xml.datafield(tag=tag, ind1=' ', ind2=' '):
                     xml.subfield(rel['prefLabel']['nb'], code='a')
                     xml.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
-                    xml.subfield(value, code='0')
+                    xml.subfield('({}){}'.format(agency, value), code='0')
 
             for value in concept.get('related', []):
                 rel = concepts[value]
@@ -181,7 +182,7 @@ class Marc21(object):
                 }[rel['type']]
                 with xml.datafield(tag=tag, ind1=' ', ind2=' '):
                     xml.subfield(rel['prefLabel']['nb'], code='a')
-                    xml.subfield(value, code='0')
+                    xml.subfield('({}){}'.format(agency, value), code='0')
 
             # 680 Notes
             for value in concept.get('note', []):
