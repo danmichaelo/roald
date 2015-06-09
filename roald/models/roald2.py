@@ -10,10 +10,23 @@ class Concept(object):
     def __init__(self, conceptType):
         super(Concept, self).__init__()
         self.data = {
-            'prefLabel': {},
-            'type': conceptType
+            'prefLabel': {}
         }
+        self.set_type(conceptType)
         self.blank = True
+
+    def set_type(self, conceptType):
+
+        if conceptType not in ['Topic', 'Geographic', 'Temporal', 'GenreForm', 'CompoundHeading', 'VirtualCompoundHeading']:
+            raise ValueError('Invalid concept type')
+
+        conceptTypes = [conceptType]
+
+        # Genre/form can also be used as topic:
+        if conceptType == 'GenreForm':
+            conceptTypes.append('Topic')
+
+        self.data['type'] = conceptTypes
 
     def add(self, key, value):
         self.blank = False
@@ -29,6 +42,9 @@ class Concept(object):
 
     def set(self, key, value):
         self.blank = False
+        if key == 'type':
+            self.set_type(value)
+            return
         origkey = key
         key = key.split('.')
         data = self.data
@@ -66,25 +82,26 @@ class Roald2(object):
 
         concepts = []
         for f, t in files.items():
-            concepts += self.readFile(path + f, t)
+            concepts += self.read_file(path + f, t)
 
         return {c.get('id'): c.data for c in concepts}
 
-    def readFile(self, filename, conceptType):
+    def read_file(self, filename, conceptType):
         concepts = []
         f = codecs.open(filename, 'r', 'utf-8')
-        for concept in self.convert(f.read(), conceptType):
+        for concept in self.read_concept(f.read(), conceptType):
             if not concept.blank:
                 concepts.append(concept)
         f.close()
         return concepts
 
-    def convert(self, data, conceptType):
+    def read_concept(self, data, conceptType):
         concept = Concept(conceptType)
         for line in data.split('\n'):
             line = line.strip().split('= ')
             if len(line) == 1:
-                yield concept
+                if not concept.blank:
+                    yield concept
                 concept = Concept(conceptType)
             else:
                 key, value = line
@@ -136,6 +153,9 @@ class Roald2(object):
                 elif key in ['da', 'db', 'dx', 'dy', 'dz']:
                     # uri = 'http://data.ub.uio.no/realfagstermer/{}'.format(value)
                     concept.add('component', value)
+                    if key in ['dx', 'dy', 'dz']:
+                        concept.set_type('VirtualCompoundHeading')
+
                 else:
                     print 'Unknown key: {}'.format(key)
         if not concept.blank:

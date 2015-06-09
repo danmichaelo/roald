@@ -5,6 +5,7 @@ import json
 from .models import Roald2
 from .models import Marc21
 from .models import Skos
+from .models import Concepts
 
 
 class Roald(object):
@@ -21,20 +22,16 @@ class Roald(object):
 
     def __init__(self):
         super(Roald, self).__init__()
-        self.concepts = []
+        self.concepts = Concepts()
 
     def load(self, filename):
-        rt = json.load(codecs.open(filename, 'r', 'utf-8'))
-        self.concepts = rt['concepts']
+        self.concepts.fromfile(filename)
 
     def save(self, filename):
-        json.dump({'concepts': self.concepts},
-                  codecs.open(filename, 'w', 'utf-8'),
-                  indent=2)
+        self.concepts.tofile(filename)
 
     def importRoald2(self, path='./'):
-        rii = Roald2()
-        self.concepts = rii.read(path)
+        self.concepts.load(Roald2().read(path))
 
     def exportMarc21(self, filename):
         m21 = Marc21()
@@ -45,3 +42,9 @@ class Roald(object):
         skos = Skos()
         with open(filename, 'w') as f:
             f.write(skos.convert(self.concepts))
+
+    def authorize(self, value):
+        # <value> can take a compound heading value like "$a Component1 $x Component2 $x Component3"
+        return self.concepts.by_term(value)
+        # parts = [[x.strip()[0], x.strip()[1:].strip()] for x in value.split('$') if len(x.strip()) > 0]
+        # for part in parts:

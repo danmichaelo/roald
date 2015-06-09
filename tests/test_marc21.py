@@ -4,7 +4,7 @@ import unittest
 from lxml import etree
 from StringIO import StringIO
 
-from roald.models import Marc21
+from roald.models.marc21 import Marc21
 
 
 class TestConverter(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestConverter(unittest.TestCase):
                 'id': '1',
                 'prefLabel': {'nb': 'Forente nasjoner'},
                 'acronym': ['FN'],
-                'type': 'Topic'
+                'type': ['Topic']
             }
         }
         m21 = Marc21()
