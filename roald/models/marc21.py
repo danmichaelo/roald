@@ -2,33 +2,43 @@
 import isodate
 import xmlwitch
 
+from roald.models.concepts import Concepts
+
 
 class Marc21(object):
     """
     Class for exporting data as MARC21
     """
 
-    def __init__(self):
+    def __init__(self, concepts=None):
         super(Marc21, self).__init__()
+        if concepts is not None:
+            self.load(concepts)
 
-    def convert(self, concepts):
+    def load(self, data):
+        if type(data) == dict:
+            self.concepts = Concepts(data)
+        elif type(data) == Concepts:
+            self.concepts = data
+        else:
+            raise ValueError
+
+    def serialize(self):
 
         # Make a dictionary of narrower concepts for fast lookup
         self.narrower = {}
-        for c in concepts.concepts.values():  # TODO: Gjør concepts til en iterator
+        for c in self.concepts:
             for x in c.get('broader', []):
                 self.narrower[x] = self.narrower.get(x, []) + [c['id']]
 
-        self.xml = xmlwitch.Builder(version='1.0', encoding='utf-8')
+        builder = xmlwitch.Builder(version='1.0', encoding='utf-8')
 
-        with self.xml.collection(xmlns='info:lc/xmlns/marcxchange-v1'):
-            for concept in concepts.concepts.values():
-                self.convertConcept(concept, concepts)
-        return str(self.xml)
+        with builder.collection(xmlns='info:lc/xmlns/marcxchange-v1'):
+            for concept in self.concepts:
+                self.convert_concept(builder, concept, self.concepts)
+        return str(builder)
 
-    def convertConcept(self, concept, concepts):
-
-        xml = self.xml
+    def convert_concept(self, builder, concept, concepts):
 
         agency = 'NoOU'
 
@@ -47,47 +57,52 @@ class Marc21(object):
             if conceptType == 'VirtualCompoundHeading':
                 continue
 
-            with xml.record(xmlns='http://www.loc.gov/MARC21/slim'):
+            with builder.record(xmlns='http://www.loc.gov/MARC21/slim', type='Authority'):
 
                 # Fixed leader for all records
                 # Ref: <http://www.loc.gov/marc/uma/pt8-11.html#pt8>
                 leader = '00000nz  a2200000n  4500'
-                xml.leader(leader)
+                builder.leader(leader)
 
                 # 001 Control number
-                xml.controlfield(concept.get('id'), tag='001')
+                builder.controlfield(concept.get('id'), tag='001')
 
                 # 003 MARC code for the agency whose system control number is contained in field 001 (Control Number).
-                xml.controlfield(agency, tag='003')
+                builder.controlfield(agency, tag='003')
 
                 # 005 Date of creation
-                xml.controlfield(modified.strftime('%Y%m%d%H%M%S.0'), tag='005')
+                builder.controlfield(modified.strftime('%Y%m%d%H%M%S.0'), tag='005')
 
                 # 008 Blablabla
                 field008 = '{created}|||a|z||||||          || a||     d'.format(created=created.strftime('%y%m%d'))
-                xml.controlfield(field008, tag='008')
+                builder.controlfield(field008, tag='008')
 
                 # 035 System control number ?
                 # Her kan vi legge inn ID-er fra andre systemer, f.eks. BARE?
                 # For eksempel, se XML-dataene fra WebDewey
 
+                # 024 Other Standard Identifier
+                with builder.datafield(tag='024', ind1='7', ind2=' '):
+                    builder.subfield(concepts.uri(concept.get('id')), code='a')
+                    builder.subfield('uri', code='2')
+
                 # 040 Cataloging source
-                with xml.datafield(tag='040', ind1=' ', ind2=' '):
-                    xml.subfield(agency, code='a')     # Original cataloging agency
-                    xml.subfield('nor', code='b')      # Language of cataloging
-                    xml.subfield(agency, code='c')     # Transcribing agency
-                    xml.subfield('noubomn', code='f')  # Subject heading/thesaurus
+                with builder.datafield(tag='040', ind1=' ', ind2=' '):
+                    builder.subfield(agency, code='a')     # Original cataloging agency
+                    builder.subfield('nor', code='b')      # Language of cataloging
+                    builder.subfield(agency, code='c')     # Transcribing agency
+                    builder.subfield('noubomn', code='f')  # Subject heading/thesaurus
 
                 # 083 DDC number
                 for value in concept.get('ddc', []):
-                    with xml.datafield(tag='083', ind1=' ', ind2=' '):
-                        xml.subfield(value, code='a')
+                    with builder.datafield(tag='083', ind1=' ', ind2=' '):
+                        builder.subfield(value, code='a')
 
                 # 148/150/151/155 Authorized heading
                 if conceptType == 'CompoundHeading':
 
                     # Determine tag number based on the first component:
-                    rel = concepts.concepts[concept.get('component')[0]]
+                    rel = concepts.by_id(concept.get('component')[0])
                     tag = {
                         'Temporal': '148',
                         'Topic': '150',
@@ -95,14 +110,14 @@ class Marc21(object):
                         'GenreForm': '155',
                     }[rel['type'][0]]
 
-                    with xml.datafield(tag=tag, ind1=' ', ind2=' '):
+                    with builder.datafield(tag=tag, ind1=' ', ind2=' '):
 
                         # Add the first component. Always use subfield $a. Correct???
-                        xml.subfield(rel['prefLabel']['nb'], code='a')
+                        builder.subfield(rel['prefLabel']['nb'], code='a')
 
                         # Add remaining components
                         for value in concept.get('component')[1:]:
-                            rel = concepts.concepts[value]
+                            rel = concepts.by_id(value)
 
                             # Determine subfield code from type:
                             sf = {
@@ -113,7 +128,7 @@ class Marc21(object):
                             }[rel['type'][0]]
 
                             # OBS! 150 har også $b.. Men når brukes egentlig den??
-                            xml.subfield(rel['prefLabel']['nb'], code=sf)
+                            builder.subfield(rel['prefLabel']['nb'], code=sf)
 
                 else:  # Not a compound heading
                     for lang, value in concept.get('prefLabel').items():
@@ -126,8 +141,8 @@ class Marc21(object):
                         if lang == 'nb':
 
                             # Always use subfield $a. Correct???
-                            with xml.datafield(tag=tag, ind1=' ', ind2=' '):
-                                xml.subfield(value, code='a')
+                            with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                                builder.subfield(value, code='a')
 
                     # Add 448/450/451/455 See from tracings
                     for lang, values in concept.get('altLabel', {}).items():
@@ -139,9 +154,9 @@ class Marc21(object):
                         }[conceptType]
                         if lang == 'nb':
                             for value in values:
-                                with xml.datafield(tag=tag, ind1=' ', ind2=' '):
+                                with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                                     # Always use subfield $a. Correct???
-                                    xml.subfield(value, code='a')
+                                    builder.subfield(value, code='a')
                     for value in concept.get('acronym', {}):
                         tag = {
                             'Temporal': '448',
@@ -149,47 +164,47 @@ class Marc21(object):
                             'Geographic': '451',
                             'GenreForm': '455',
                         }[conceptType]
-                        with xml.datafield(tag=tag, ind1=' ', ind2=' '):
-                            xml.subfield(value, code='a')
+                        with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                            builder.subfield(value, code='a')
 
                             # Heading in the tracing field is an acronym for the heading in the 1XX field.
                             # Ref: http://www.loc.gov/marc/authority/adtracing.html
-                            xml.subfield('d', code='g')
+                            builder.subfield('d', code='g')
 
                 # 548/550/551/555 See also
                 for value in concept.get('broader', []):
-                    rel = concepts.concepts[value]
+                    rel = concepts.by_id(value)
                     tag = {
                         'Temporal': '548',
                         'Topic': '550',
                         'Geographic': '551',
                         'GenreForm': '555',
                     }[rel['type'][0]]
-                    with xml.datafield(tag=tag, ind1=' ', ind2=' '):
-                        xml.subfield(rel['prefLabel']['nb'], code='a')
-                        xml.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
-                        xml.subfield('({}){}'.format(agency, value), code='0')
+                    with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                        builder.subfield(rel['prefLabel']['nb'], code='a')
+                        builder.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
+                        builder.subfield('({}){}'.format(agency, value), code='0')
 
                 for value in self.narrower.get(concept['id'], []):
-                    rel = concepts.concepts[value]
-                    with xml.datafield(tag=tag, ind1=' ', ind2=' '):
-                        xml.subfield(rel['prefLabel']['nb'], code='a')
-                        xml.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
-                        xml.subfield('({}){}'.format(agency, value), code='0')
+                    rel = concepts.by_id(value)
+                    with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                        builder.subfield(rel['prefLabel']['nb'], code='a')
+                        builder.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
+                        builder.subfield('({}){}'.format(agency, value), code='0')
 
                 for value in concept.get('related', []):
-                    rel = concepts.concepts[value]
+                    rel = concepts.by_id(value)
                     tag = {
                         'Temporal': '548',
                         'Topic': '550',
                         'Geographic': '551',
                         'GenreForm': '555',
                     }[rel['type'][0]]
-                    with xml.datafield(tag=tag, ind1=' ', ind2=' '):
-                        xml.subfield(rel['prefLabel']['nb'], code='a')
-                        xml.subfield('({}){}'.format(agency, value), code='0')
+                    with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                        builder.subfield(rel['prefLabel']['nb'], code='a')
+                        builder.subfield('({}){}'.format(agency, value), code='0')
 
                 # 680 Notes
                 for value in concept.get('note', []):
-                    with xml.datafield(tag='680', ind1=' ', ind2=' '):
-                        xml.subfield(value, code='i')
+                    with builder.datafield(tag='680', ind1=' ', ind2=' '):
+                        builder.subfield(value, code='i')

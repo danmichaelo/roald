@@ -29,3 +29,9 @@ class TestConverter(unittest.TestCase):
         self.assertEqual('REAL012789', concepts.by_term('Fornybar energi')['id'])
         self.assertEqual('REAL013995', concepts.by_term('Livssyklusanalyse')['id'])
         self.assertEqual('REAL022146', concepts.by_term('Fornybar energi : Livssyklusanalyse')['id'])
+
+    def test_builder(self):
+        c = Concepts()
+        # c.add('REAL012789').setPrefLabel('Fornybar energi', 'nb')
+
+        # TODO ...
