@@ -14,5 +14,5 @@ setup(name='roald',
       url='https://github.com/scriptotek/roald',
       license='MIT',
       packages=['roald'],
-      install_requires=['xmlwitch', 'isodate', 'lxml']
+      install_requires=['xmlwitch', 'isodate', 'lxml', 'rdflib']
       )
