@@ -115,7 +115,7 @@ class Marc21(object):
 
                 # 083 DDC number
                 for value in concept.get('ddc', []):
-                    with builder.datafield(tag='083', ind1=' ', ind2=' '):
+                    with builder.datafield(tag='083', ind1='0', ind2='4'):
                         builder.subfield(value, code='a')
 
                 # 148/150/151/155 Authorized heading
