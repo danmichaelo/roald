@@ -1,6 +1,7 @@
 # encoding=utf-8
 import codecs
 import json
+import os
 
 from .models import Roald2
 from .models import Marc21
@@ -29,6 +30,7 @@ class Roald(object):
             - filename : the filename to a 'roald3' file or path to a 'roald2' directory.
             - format : 'roald3' or 'roald2'.
         """
+        filename = os.path.expanduser(filename)
         if format == 'roald3':
             self.concepts.fromfile(filename)
         elif format == 'roald2':
@@ -37,9 +39,11 @@ class Roald(object):
             raise ValueError('Unknown format')
 
     def save(self, filename):
+        filename = os.path.expanduser(filename)
         self.concepts.tofile(filename)
 
     def export(self, filename, format, **kwargs):
+        filename = os.path.expanduser(filename)
         if format == 'marc21':
             m21 = Marc21(self.concepts, **kwargs)
             with open(filename, 'w') as f:
