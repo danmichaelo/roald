@@ -14,11 +14,13 @@ class Marc21(object):
     transcribingAgency = None  # Transcribing agency 040 $c
     modifyingAgency = None  # Modifying agency 040 $d
     vocabulary = None  # Vocabulary code, 040 $f
+    defaultLanguage = None  # Default language code for 040 $b
 
-    def __init__(self, concepts=None, agency=None, vocabulary=None):
+    def __init__(self, concepts=None, agency=None, vocabulary=None, defaultLanguage=None):
         super(Marc21, self).__init__()
         self.agency = agency
         self.vocabulary = vocabulary
+        self.defaultLanguage = defaultLanguage
         if concepts is not None:
             self.load(concepts)
 
@@ -100,9 +102,10 @@ class Marc21(object):
 
                 # 040 Cataloging source
                 with builder.datafield(tag='040', ind1=' ', ind2=' '):
-                    builder.subfield('nor', code='b')      # Language of cataloging
                     if self.agency is not None:
                         builder.subfield(self.agency, code='a')     # Original cataloging agency
+                    if self.defaultLanguage is not None:
+                        builder.subfield(self.defaultLanguage, code='b')      # Language of cataloging
                     if self.transcribingAgency is not None:
                         builder.subfield(self.transcribingAgency, code='c')     # Transcribing agency
                     if self.modifyingAgency is not None:
