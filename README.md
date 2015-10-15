@@ -10,11 +10,19 @@ som MARC21XML og RDF/SKOS:
 ``` {.python}
 from roald import Roald
 roald = Roald()
-roald.load('./riidata/', format='roald2')
+roald.load('~/fuse/riidata/ureal/rii/', format='roald2')
 roald.save('realfagstermer.json')
-roald.export('realfagstermer.marc21.xml', format='marc21')
+
+marc21options = {
+  'vocabulary': 'noubomn',
+  'created_by': 'NoOU',
+  'language': 'nob'
+}
+roald.export('realfagstermer.marc21.xml', format='marc21', **marc21options)
 roald.export('realfagstermer.ttl', format='rdfskos')
 ```
+
+(Her er `~/fuse/riidata` montert med sshfs til `/net/app-evs/w3-vh/no.uio.www_80/ub/emnesok/htdocs/data/`)
 
 For å kjøre tester:
 
@@ -99,7 +107,7 @@ Type                      | Navn                 | Beskrivelse                  
 `Topic`                   | Emne                 | I praksis Hjortsæters ‘innholdsbeskrivende emneord’?                                                                       | 650 Topical Term (en) / Sachsclagwort (de) / Term (sv).
 `Place`                   | Sted                 | Geografisk punkt eller område (på jorden eller andre steder). Inkluderer også fiktive steder. Gir geografisk avgrensning.  | 651 Geographic name (en) / Geografikum (de) / Geografiskt namn (sv)
 `Event`                   | Hendelse             | Hendelse, historisk periode, etc. Punkt eller utstrekning på tidslinja.                                                    | 648 Chronological Term (en) / Zeitschlagwort (de) Kronologisk term (sv)
-`FormGenre`               | Form/sjanger         | Bibliografisk form eller sjanger.                                                                                          | 655 Genre/Form (en) / Genre/formschlagwort (de) / Genre eller form (sv)
+`GenreForm`               | Form/sjanger         | Bibliografisk form eller sjanger.                                                                                          | 655 Genre/Form (en) / Genre/formschlagwort (de) / Genre eller form (sv)
 `CompoundHeading`         | Emnestreng           | Sammensatt emne i streng                                                                                                   | (diverse)
 `VirtualCompoundHeading`  | Virtuell emnestreng  | Sammensatt emneord i streng som påføres katalogposter komponentvis, ikke som streng.                                       | (diverse)
 
@@ -157,7 +165,75 @@ TODO
 MARC21-serialisering
 --------------------
 
-TODO
+### Overordnede valg og åpne spørsmål
+
+* Autoritetsposter av typen `VirtualCompoundHeading` ignoreres fordi disse påføres
+  katalogpostene komponentvis, ikke som strenger. De skal/kan derfor ikke valideres i Alma.
+  Poster av typen `CompoundHeading` (“Topic : Topic”-strenger) eksporteres,
+  *uklart??*
+
+* Se-henvisninger føres ikke som egne autoritetsposter, men legges inn som
+  sporingsinnførsler (*tracings*), se http://www.loc.gov/marc/authority/adtracing.html . Akronymer markeres med
+  `$g d`.
+
+* Alle autoritetsposter av typen `GenreForm` i Realfagstermer kan egentlig
+  brukes både som emne (Topic) og form/sjanger (GenreForm), men har bare én ID. Hvordan uttrykker vi disse i MARC21?
+  Se [Issue #1](https://github.com/realfagstermer/roald/issues/1).
+
+### Informasjon om felt som benyttes
+
+* **Leader**: settes til en fast verdi `00000nz  a2200000n  4500` for alle poster.
+
+* **001 og 003** Control number and agency
+
+  * Kontrollnummeret i 001 er på formen `REAL[0-9]{6}`, eks.: `REAL009035`.
+  * Organisasjonskoden i 003 settes alltid til `NoOU`, Universitet i Oslos kode fra
+    "[MARC Code List for Organizations](http://www.loc.gov/marc/organizations/org-search.php)".
+    Det kan tenkes at vi må endre denne til BIBYS-koden `NO-TrBIB`.
+  * Kontrollnummeret og organisasjonskoden utgjør til sammen en globalt unik
+    identifikator som brukes for å henvise til autoritetsposten.
+    Eks.: `(NoOU)REAL009035`.
+
+* **005** Date and Time of Latest Transaction
+  * Dato for siste endring.
+
+* **008** Fixed-Length Data Elements
+  * De første 6 tegnene brukes til opprettelsesdato for posten.
+  * Resten fylles ut med en fast verdi `|||a|z||||||          || a||     d`.
+
+* **024** Other Standard Identifier
+  * Her legges postens URI (eks.: `http://data.ub.uio.no/realfagstermer/c010856`)
+
+* **035** System Control Number
+  * Kan brukes til å legge inn ID til posten i andre systemer, f.eks. BARE.
+  * *Brukes foreløpig ikke*.
+
+* **040** Cataloging Source
+  * Settes foreløpig til `040 ## $a NoOU $b nob $f noubomn` for alle poster.
+  * Språk er litt kilent, siden vi *egentlig* har flerspråklige autoritetsposter.
+    Vi kan evt. opprette én henvisningspost per språk, men da må vi også generere ID-er for disse.
+
+* **083** Dewey Decimal Classification Number
+  * Fylles ut med DDC-nummer der det finnes.
+  * Utgave (`$2`) spesifiseres foreløpig ikke, fordi dette ikke er spesifisert i Roald.
+
+* **148/150/151/155** Authorized Heading
+  * Her legges den foretrukne termen på norsk bokmål.
+  * MARC-kode velges basert på posttype.
+  * Delfelt `$x` benyttes for strenger.
+
+* **448/450/451/455** See From Tracings
+  * Her legges ikke-foretrukne termer.
+  * MARC-kode velges basert på posttype.
+  * Uavklart: Skal vi også legge inn termer (foretrukne og ikke-foretrukne)
+    på nynorsk, engelsk og latin her??
+
+* **548/550/551/555** See Also From Tracings
+  * Her legges se også-henvisninger og hierarkiske relasjoner (`$w g`).
+  * MARC-kode velges basert på posttypen til den henvisende posten.
+
+* **680** Public General Note
+  * Her legges noter.
 
 Ordliste
 --------
@@ -171,5 +247,5 @@ Ordliste
 
 -   **Emne** (Subject): hva eller hvem et dokument handler om
 
--   **Deskriptor** eller **indeksterm**: Term som påføres katalogpost ved indeksering
-   (i tradisjonelle biblioteksystemer der det ikke er mulig å påføre andre identifikatorer)
+-   **Deskriptor** eller **indeksterm**: Unik term som påføres katalogpost
+    ved indeksering.
