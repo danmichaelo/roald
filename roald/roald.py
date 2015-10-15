@@ -24,15 +24,15 @@ class Roald(object):
         super(Roald, self).__init__()
         self.concepts = Concepts()
 
-    def load(self, source, format='roald3'):
+    def load(self, filename, format='roald3'):
         """
-            - source : the filename to a 'roald3' file or path to a 'roald2' directory.
+            - filename : the filename to a 'roald3' file or path to a 'roald2' directory.
             - format : 'roald3' or 'roald2'.
         """
         if format == 'roald3':
-            self.concepts.fromfile(source)
+            self.concepts.fromfile(filename)
         elif format == 'roald2':
-            self.concepts.load(Roald2().read(source))
+            self.concepts.load(Roald2().read(filename))
         else:
             raise ValueError('Unknown format')
 

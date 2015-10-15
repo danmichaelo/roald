@@ -10,17 +10,17 @@ class Marc21(object):
     Class for exporting data as MARC21
     """
 
-    agency = None  # Cataloguing agency 040 $a
-    transcribingAgency = None  # Transcribing agency 040 $c
-    modifyingAgency = None  # Modifying agency 040 $d
+    created_by = None  # Cataloguing agency 040 $a
+    transcribed_by = None  # Transcribing agency 040 $c
+    modified_by = None  # Modifying agency 040 $d
     vocabulary = None  # Vocabulary code, 040 $f
-    defaultLanguage = None  # Default language code for 040 $b
+    language = None  # Default language code for 040 $b
 
-    def __init__(self, concepts=None, agency=None, vocabulary=None, defaultLanguage=None):
+    def __init__(self, concepts=None, created_by=None, vocabulary=None, language=None):
         super(Marc21, self).__init__()
-        self.agency = agency
+        self.created_by = created_by
         self.vocabulary = vocabulary
-        self.defaultLanguage = defaultLanguage
+        self.language = language
         if concepts is not None:
             self.load(concepts)
 
@@ -48,10 +48,10 @@ class Marc21(object):
         return str(builder)
 
     def global_cn(self, value):
-        if self.agency is None:
+        if self.created_by is None:
             return value
         else:
-            return '({}){}'.format(self.agency, value)
+            return '({}){}'.format(self.created_by, value)
 
     def convert_concept(self, builder, concept, concepts):
 
@@ -81,35 +81,35 @@ class Marc21(object):
                 builder.controlfield(concept.get('id'), tag='001')
 
                 # 003 MARC code for the agency whose system control number is contained in field 001 (Control Number).
-                if self.agency is not None:
-                    builder.controlfield(self.agency, tag='003')
+                if self.created_by is not None:
+                    builder.controlfield(self.created_by, tag='003')
 
                 # 005 Date of creation
                 builder.controlfield(modified.strftime('%Y%m%d%H%M%S.0'), tag='005')
 
-                # 008 Blablabla
+                # 008 General Information / Informasjonskoder
                 field008 = '{created}|||a|z||||||          || a||     d'.format(created=created.strftime('%y%m%d'))
                 builder.controlfield(field008, tag='008')
-
-                # 035 System control number ?
-                # Her kan vi legge inn ID-er fra andre systemer, f.eks. BARE?
-                # For eksempel, se XML-dataene fra WebDewey
 
                 # 024 Other Standard Identifier
                 with builder.datafield(tag='024', ind1='7', ind2=' '):
                     builder.subfield(concepts.uri(concept.get('id')), code='a')
                     builder.subfield('uri', code='2')
 
+                # 035 System control number ?
+                # Her kan vi legge inn ID-er fra andre systemer, f.eks. BARE?
+                # For eksempel, se XML-dataene fra WebDewey
+
                 # 040 Cataloging source
                 with builder.datafield(tag='040', ind1=' ', ind2=' '):
-                    if self.agency is not None:
-                        builder.subfield(self.agency, code='a')     # Original cataloging agency
-                    if self.defaultLanguage is not None:
-                        builder.subfield(self.defaultLanguage, code='b')      # Language of cataloging
-                    if self.transcribingAgency is not None:
-                        builder.subfield(self.transcribingAgency, code='c')     # Transcribing agency
-                    if self.modifyingAgency is not None:
-                        builder.subfield(self.modifyingAgency, code='d')     # Modifying agency
+                    if self.created_by is not None:
+                        builder.subfield(self.created_by, code='a')     # Original cataloging agency
+                    if self.language is not None:
+                        builder.subfield(self.language, code='b')      # Language of cataloging
+                    if self.transcribed_by is not None:
+                        builder.subfield(self.transcribed_by, code='c')     # Transcribing agency
+                    if self.modified_by is not None:
+                        builder.subfield(self.modified_by, code='d')     # Modifying agency
                     if self.vocabulary is not None:
                         builder.subfield(self.vocabulary, code='f')  # Subject heading/thesaurus
 
