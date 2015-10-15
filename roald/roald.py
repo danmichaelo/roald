@@ -39,13 +39,13 @@ class Roald(object):
     def save(self, filename):
         self.concepts.tofile(filename)
 
-    def export(self, filename, format):
+    def export(self, filename, format, **kwargs):
         if format == 'marc21':
-            m21 = Marc21(self.concepts)
+            m21 = Marc21(self.concepts, **kwargs)
             with open(filename, 'w') as f:
                 f.write(m21.serialize())
         elif format == 'rdfskos':
-            skos = Skos()
+            skos = Skos(self.concepts, **kwargs)
             # with open(filename, 'w') as f:
             #     f.write(skos.convert(self.concepts))
 

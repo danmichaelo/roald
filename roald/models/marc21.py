@@ -10,8 +10,15 @@ class Marc21(object):
     Class for exporting data as MARC21
     """
 
-    def __init__(self, concepts=None):
+    agency = None  # Cataloguing agency 040 $a
+    transcribingAgency = None  # Transcribing agency 040 $c
+    modifyingAgency = None  # Modifying agency 040 $d
+    vocabulary = None  # Vocabulary code, 040 $f
+
+    def __init__(self, concepts=None, agency=None, vocabulary=None):
         super(Marc21, self).__init__()
+        self.agency = agency
+        self.vocabulary = vocabulary
         if concepts is not None:
             self.load(concepts)
 
@@ -38,9 +45,13 @@ class Marc21(object):
                 self.convert_concept(builder, concept, self.concepts)
         return str(builder)
 
-    def convert_concept(self, builder, concept, concepts):
+    def global_cn(self, value):
+        if self.agency is None:
+            return value
+        else:
+            return '({}){}'.format(self.agency, value)
 
-        agency = 'NoOU'
+    def convert_concept(self, builder, concept, concepts):
 
         if concept.get('created'):
             created = isodate.parse_datetime(concept.get('created'))
@@ -68,7 +79,8 @@ class Marc21(object):
                 builder.controlfield(concept.get('id'), tag='001')
 
                 # 003 MARC code for the agency whose system control number is contained in field 001 (Control Number).
-                builder.controlfield(agency, tag='003')
+                if self.agency is not None:
+                    builder.controlfield(self.agency, tag='003')
 
                 # 005 Date of creation
                 builder.controlfield(modified.strftime('%Y%m%d%H%M%S.0'), tag='005')
@@ -88,10 +100,15 @@ class Marc21(object):
 
                 # 040 Cataloging source
                 with builder.datafield(tag='040', ind1=' ', ind2=' '):
-                    builder.subfield(agency, code='a')     # Original cataloging agency
                     builder.subfield('nor', code='b')      # Language of cataloging
-                    builder.subfield(agency, code='c')     # Transcribing agency
-                    builder.subfield('noubomn', code='f')  # Subject heading/thesaurus
+                    if self.agency is not None:
+                        builder.subfield(self.agency, code='a')     # Original cataloging agency
+                    if self.transcribingAgency is not None:
+                        builder.subfield(self.transcribingAgency, code='c')     # Transcribing agency
+                    if self.modifyingAgency is not None:
+                        builder.subfield(self.modifyingAgency, code='d')     # Modifying agency
+                    if self.vocabulary is not None:
+                        builder.subfield(self.vocabulary, code='f')  # Subject heading/thesaurus
 
                 # 083 DDC number
                 for value in concept.get('ddc', []):
@@ -183,14 +200,14 @@ class Marc21(object):
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                         builder.subfield(rel['prefLabel']['nb'], code='a')
                         builder.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
-                        builder.subfield('({}){}'.format(agency, value), code='0')
+                        builder.subfield(self.global_cn(value), code='0')
 
                 for value in self.narrower.get(concept['id'], []):
                     rel = concepts.by_id(value)
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                         builder.subfield(rel['prefLabel']['nb'], code='a')
                         builder.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
-                        builder.subfield('({}){}'.format(agency, value), code='0')
+                        builder.subfield(self.global_cn(value), code='0')
 
                 for value in concept.get('related', []):
                     rel = concepts.by_id(value)
@@ -202,7 +219,7 @@ class Marc21(object):
                     }[rel['type'][0]]
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                         builder.subfield(rel['prefLabel']['nb'], code='a')
-                        builder.subfield('({}){}'.format(agency, value), code='0')
+                        builder.subfield(self.global_cn(value), code='0')
 
                 # 680 Notes
                 for value in concept.get('note', []):
