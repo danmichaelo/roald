@@ -113,6 +113,12 @@ class Marc21(object):
                     if self.vocabulary is not None:
                         builder.subfield(self.vocabulary, code='f')  # Subject heading/thesaurus
 
+                # 065 Other Classification Number
+                for value in concept.get('msc', []):
+                    with builder.datafield(tag='065', ind1=' ', ind2=' '):
+                        builder.subfield(value, code='a')
+                        builder.subfield('msc', code='2')
+
                 # 083 DDC number
                 for value in concept.get('ddc', []):
                     with builder.datafield(tag='083', ind1='0', ind2='4'):

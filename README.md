@@ -213,6 +213,11 @@ MARC21-serialisering
   * Språk er litt kilent, siden vi *egentlig* har flerspråklige autoritetsposter.
     Vi kan evt. opprette én henvisningspost per språk, men da må vi også generere ID-er for disse.
 
+* **065** Other Classification Number
+  * Fylles ut med MSC-nummer der det finnes.
+  * `$2 msc` fra [Classification Scheme Source Codes](http://www.loc.gov/standards/sourcelist/classification.html).
+    Merk: Ingen måte å skille mellom ulike utgaver på!
+
 * **083** Dewey Decimal Classification Number
   * Fylles ut med DDC-nummer der det finnes.
   * Utgave (`$2`) spesifiseres foreløpig ikke, fordi dette ikke er spesifisert i Roald.
