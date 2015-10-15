@@ -23,8 +23,8 @@ class Concept(object):
         conceptTypes = [conceptType]
 
         # Genre/form can also be used as topic:
-        if conceptType == 'GenreForm':
-            conceptTypes.append('Topic')
+        # if conceptType == 'GenreForm':
+        #    conceptTypes.append('Topic')
 
         self.data['type'] = conceptTypes
 
