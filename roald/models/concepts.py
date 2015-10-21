@@ -64,3 +64,6 @@ class Concepts(object):
     def __iter__(self):
         for c in self._data.values():
             yield c
+
+    def __len__(self):
+        return len(self._data)
