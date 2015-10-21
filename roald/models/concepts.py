@@ -11,14 +11,24 @@ class Concepts(object):
     Concepts class
     """
 
-    def __init__(self, data={}):
+    def __init__(self, data={}, uri_format=None):
         """
             - data: dict
+            - uri_format : the URI format string, example: 'http://data.me/{id}'
         """
         super(Concepts, self).__init__()
         self._ids = {}
         self._terms = {}
+        self._uri_format = uri_format
         self.load(data)
+
+    @property
+    def uri_format(self):
+        return self._uri_format
+
+    @uri_format.setter
+    def uri_format(self, value):
+        self._uri_format = value
 
     def get(self, id=None, term=None):
         if id is not None:
@@ -48,8 +58,8 @@ class Concepts(object):
     def split_compound_heading(self, term):
         parts = [[x.strip()[0], x.strip()[1:].strip()] for x in value.split('$') if len(x.strip()) > 0]
 
-    def uri(self, id):  # TODO: Move into a new Concept class
-        return 'http://data.ub.uio.no/realfagstermer/c{}'.format(id[4:])
+    def uri(self, id):  # TODO: Move into a new Concept class?
+        return self._uri_format.format(id=id[4:])
 
     def __iter__(self):
         for c in self._data.values():

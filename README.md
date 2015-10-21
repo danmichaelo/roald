@@ -12,6 +12,7 @@ from roald import Roald
 
 roald = Roald()
 roald.load('~/fuse/riidata/ureal/rii/', format='roald2', language='nb')
+roald.set_uri_format('http://data.ub.uio.no/realfagstermer/c{id}')
 roald.save('realfagstermer.json')
 
 marc21options = {

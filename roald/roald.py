@@ -18,6 +18,7 @@ class Roald(object):
 
     >>> roald = roald.Roald()
     >>> roald.load('./data/', format='roald2', language='nb')
+    >>> roald.set_uri_format('http://data.ub.uio.no/realfagstermer/c{id}')
     >>> roald.save('realfagstermer.json')
     >>> roald.export('realfagstermer.marc21.xml', format='marc21')
     """
@@ -46,12 +47,16 @@ class Roald(object):
         else:
             raise ValueError('Unknown format')
 
+    def set_uri_format(self, value):
+        self.concepts.uri_format = value
+
     def save(self, filename):
         filename = os.path.expanduser(filename)
         if self.default_language is None:
             raise RuntimeError('roald.save: No default language code set.')
         data = {
             'default_language': self.default_language.alpha2,
+            'uri_format': self.concepts.uri_format,
             'concepts': self.concepts.get()
         }
         json.dump(data, codecs.open(filename, 'w', 'utf-8'), indent=2)
