@@ -33,7 +33,7 @@ class Roald(object):
         filename = os.path.expanduser(filename)
         if format == 'roald3':
             data = json.load(codecs.open(filename, 'r', 'utf-8'))
-            self.concepts.load(rt['concepts'])
+            self.concepts.load(data['concepts'])
         elif format == 'roald2':
             self.concepts.load(Roald2().read(filename))
         else:
