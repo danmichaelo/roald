@@ -23,6 +23,21 @@ roald.export('realfagstermer.marc21.xml', format='marc21', **marc21options)
 roald.export('realfagstermer.ttl', format='rdfskos')
 ```
 
+``` {.python}
+from roald import Roald
+roald = Roald()
+roald.load('~/fuse/riidata/mr/', format='roald2', language='en')
+roald.set_uri_format('http://data.ub.uio.no/mr/c{id}')
+roald.save('menneskerettighetstermer.json')
+
+marc21options = {
+  'vocabulary': 'noubomr',
+  'created_by': 'NoOU'
+}
+roald.export('menneskerettighetstermer.marc21.xml', format='marc21', **marc21options)
+roald.export('menneskerettighetstermer.ttl', format='rdfskos')
+```
+
 (Her er `~/fuse/riidata` montert med sshfs til `/net/app-evs/w3-vh/no.uio.www_80/ub/emnesok/htdocs/data/`)
 
 For å kjøre tester:
