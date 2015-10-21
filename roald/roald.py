@@ -55,6 +55,6 @@ class Roald(object):
 
     def authorize(self, value):
         # <value> can take a compound heading value like "$a Component1 $x Component2 $x Component3"
-        return self.concepts.by_term(value)
+        return self.concepts.get(term=value)
         # parts = [[x.strip()[0], x.strip()[1:].strip()] for x in value.split('$') if len(x.strip()) > 0]
         # for part in parts:

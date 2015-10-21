@@ -31,6 +31,13 @@ class Concepts(object):
                   codecs.open(filename, 'w', 'utf-8'),
                   indent=2)
 
+    def get(self, id=None, term=None):
+        if id is not None:
+            return self._data[id]
+        if term is not None:
+            return self._data[self._ids[term]]
+        return self._data
+
     def load(self, data):
         """
             data: dict
@@ -48,12 +55,6 @@ class Concepts(object):
                 s = ' : '.join([self._terms[x] for x in v['component']])
                 self._ids[s] = k
                 self._terms[k] = s
-
-    def by_id(self, id):
-        return self._data[id]
-
-    def by_term(self, term):
-        return self._data[self._ids[term]]
 
     def split_compound_heading(self, term):
         parts = [[x.strip()[0], x.strip()[1:].strip()] for x in value.split('$') if len(x.strip()) > 0]

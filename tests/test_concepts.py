@@ -26,9 +26,9 @@ class TestConverter(unittest.TestCase):
                 'component': ['REAL012789', 'REAL013995']
             }
         })
-        self.assertEqual('REAL012789', concepts.by_term('Fornybar energi')['id'])
-        self.assertEqual('REAL013995', concepts.by_term('Livssyklusanalyse')['id'])
-        self.assertEqual('REAL022146', concepts.by_term('Fornybar energi : Livssyklusanalyse')['id'])
+        self.assertEqual('REAL012789', concepts.get(term='Fornybar energi')['id'])
+        self.assertEqual('REAL013995', concepts.get(term='Livssyklusanalyse')['id'])
+        self.assertEqual('REAL022146', concepts.get(term='Fornybar energi : Livssyklusanalyse')['id'])
 
     def test_builder(self):
         c = Concepts()

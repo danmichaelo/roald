@@ -128,7 +128,7 @@ class Marc21(object):
                 if conceptType == 'CompoundHeading':
 
                     # Determine tag number based on the first component:
-                    rel = concepts.by_id(concept.get('component')[0])
+                    rel = concepts.get(id=concept.get('component')[0])
                     tag = {
                         'Temporal': '148',
                         'Topic': '150',
@@ -143,7 +143,7 @@ class Marc21(object):
 
                         # Add remaining components
                         for value in concept.get('component')[1:]:
-                            rel = concepts.by_id(value)
+                            rel = concepts.get(id=value)
 
                             # Determine subfield code from type:
                             sf = {
@@ -199,7 +199,7 @@ class Marc21(object):
 
                 # 548/550/551/555 See also
                 for value in concept.get('broader', []):
-                    rel = concepts.by_id(value)
+                    rel = concepts.get(id=value)
                     tag = {
                         'Temporal': '548',
                         'Topic': '550',
@@ -212,14 +212,14 @@ class Marc21(object):
                         builder.subfield(self.global_cn(value), code='0')
 
                 for value in self.narrower.get(concept['id'], []):
-                    rel = concepts.by_id(value)
+                    rel = concepts.get(id=value)
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                         builder.subfield(rel['prefLabel']['nb'], code='a')
                         builder.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
                         builder.subfield(self.global_cn(value), code='0')
 
                 for value in concept.get('related', []):
-                    rel = concepts.by_id(value)
+                    rel = concepts.get(id=value)
                     tag = {
                         'Temporal': '548',
                         'Topic': '550',
