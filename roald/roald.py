@@ -32,7 +32,8 @@ class Roald(object):
         """
         filename = os.path.expanduser(filename)
         if format == 'roald3':
-            self.concepts.fromfile(filename)
+            data = json.load(codecs.open(filename, 'r', 'utf-8'))
+            self.concepts.load(rt['concepts'])
         elif format == 'roald2':
             self.concepts.load(Roald2().read(filename))
         else:
@@ -40,7 +41,10 @@ class Roald(object):
 
     def save(self, filename):
         filename = os.path.expanduser(filename)
-        self.concepts.tofile(filename)
+        data = {
+            'concepts': self.concepts.get()
+        }
+        json.dump(data, codecs.open(filename, 'w', 'utf-8'), indent=2)
 
     def export(self, filename, format, **kwargs):
         filename = os.path.expanduser(filename)

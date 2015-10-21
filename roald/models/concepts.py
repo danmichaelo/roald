@@ -22,15 +22,6 @@ class Concepts(object):
         self._terms = {}
         self.load(data)
 
-    def fromfile(self, filename):
-        rt = json.load(codecs.open(filename, 'r', 'utf-8'))
-        self.load(rt['concepts'])
-
-    def tofile(self, filename):
-        json.dump({'concepts': self._data},
-                  codecs.open(filename, 'w', 'utf-8'),
-                  indent=2)
-
     def get(self, id=None, term=None):
         if id is not None:
             return self._data[id]
