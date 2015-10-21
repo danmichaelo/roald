@@ -2,6 +2,7 @@
 import isodate
 import xmlwitch
 import codecs
+import os
 
 
 class Concept(object):
@@ -84,10 +85,15 @@ class Roald2(object):
         for f, t in files.items():
             concepts += self.read_file(path + f, t)
 
+        if len(concepts) == 0:
+            raise RuntimeError('Found no concepts in {}'.format(path))
+
         return {c.get('id'): c.data for c in concepts}
 
     def read_file(self, filename, conceptType):
         concepts = []
+        if not os.path.isfile(filename):
+            return []
         f = codecs.open(filename, 'r', 'utf-8')
         for concept in self.read_concept(f.read(), conceptType):
             if not concept.blank:
