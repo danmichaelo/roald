@@ -11,13 +11,11 @@ class Concepts(object):
     Concepts class
     """
 
-    def __init__(self, data={}, indexLanguage='nb'):
+    def __init__(self, data={}):
         """
             - data: dict
-            - indexLanguage : the primary language
         """
         super(Concepts, self).__init__()
-        self.indexLanguage = indexLanguage
         self._ids = {}
         self._terms = {}
         self.load(data)

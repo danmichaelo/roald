@@ -1,6 +1,7 @@
 # encoding=utf-8
 import isodate
 import xmlwitch
+import iso639
 
 from roald.models.concepts import Concepts
 
@@ -105,7 +106,7 @@ class Marc21(object):
                     if self.created_by is not None:
                         builder.subfield(self.created_by, code='a')     # Original cataloging agency
                     if self.language is not None:
-                        builder.subfield(self.language, code='b')      # Language of cataloging
+                        builder.subfield(self.language.bibliographic, code='b')      # Language of cataloging
                     if self.transcribed_by is not None:
                         builder.subfield(self.transcribed_by, code='c')     # Transcribing agency
                     if self.modified_by is not None:
@@ -139,7 +140,7 @@ class Marc21(object):
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
 
                         # Add the first component. Always use subfield $a. Correct???
-                        builder.subfield(rel['prefLabel']['nb'], code='a')
+                        builder.subfield(rel['prefLabel'][self.language.alpha2], code='a')
 
                         # Add remaining components
                         for value in concept.get('component')[1:]:
@@ -154,7 +155,7 @@ class Marc21(object):
                             }[rel['type'][0]]
 
                             # OBS! 150 har også $b.. Men når brukes egentlig den??
-                            builder.subfield(rel['prefLabel']['nb'], code=sf)
+                            builder.subfield(rel['prefLabel'][self.language.alpha2], code=sf)
 
                 else:  # Not a compound heading
                     for lang, value in concept.get('prefLabel').items():
@@ -164,7 +165,7 @@ class Marc21(object):
                             'Geographic': '151',
                             'GenreForm': '155',
                         }[conceptType]
-                        if lang == 'nb':
+                        if lang == self.language.alpha2:
 
                             # Always use subfield $a. Correct???
                             with builder.datafield(tag=tag, ind1=' ', ind2=' '):
@@ -178,7 +179,7 @@ class Marc21(object):
                             'Geographic': '451',
                             'GenreForm': '455',
                         }[conceptType]
-                        if lang == 'nb':
+                        if lang == self.language.alpha2:
                             for value in values:
                                 with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                                     # Always use subfield $a. Correct???
@@ -207,14 +208,14 @@ class Marc21(object):
                         'GenreForm': '555',
                     }[rel['type'][0]]
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                        builder.subfield(rel['prefLabel']['nb'], code='a')
+                        builder.subfield(rel['prefLabel'][self.language.alpha2], code='a')
                         builder.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
                         builder.subfield(self.global_cn(value), code='0')
 
                 for value in self.narrower.get(concept['id'], []):
                     rel = concepts.get(id=value)
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                        builder.subfield(rel['prefLabel']['nb'], code='a')
+                        builder.subfield(rel['prefLabel'][self.language.alpha2], code='a')
                         builder.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
                         builder.subfield(self.global_cn(value), code='0')
 
@@ -227,7 +228,7 @@ class Marc21(object):
                         'GenreForm': '555',
                     }[rel['type'][0]]
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                        builder.subfield(rel['prefLabel']['nb'], code='a')
+                        builder.subfield(rel['prefLabel'][self.language.alpha2], code='a')
                         builder.subfield(self.global_cn(value), code='0')
 
                 # 680 Notes

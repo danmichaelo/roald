@@ -9,14 +9,14 @@ som MARC21XML og RDF/SKOS:
 
 ``` {.python}
 from roald import Roald
+
 roald = Roald()
-roald.load('~/fuse/riidata/ureal/rii/', format='roald2')
+roald.load('~/fuse/riidata/ureal/rii/', format='roald2', language='nb')
 roald.save('realfagstermer.json')
 
 marc21options = {
   'vocabulary': 'noubomn',
-  'created_by': 'NoOU',
-  'language': 'nob'
+  'created_by': 'NoOU'
 }
 roald.export('realfagstermer.marc21.xml', format='marc21', **marc21options)
 roald.export('realfagstermer.ttl', format='rdfskos')

@@ -71,7 +71,7 @@ class Roald2(object):
     def __init__(self):
         super(Roald2, self).__init__()
 
-    def read(self, path='./'):
+    def read(self, path='./', language='en'):
 
         files = {
             'idtermer.txt': 'Topic',
@@ -83,25 +83,25 @@ class Roald2(object):
 
         concepts = []
         for f, t in files.items():
-            concepts += self.read_file(path + f, t)
+            concepts += self.read_file(path + f, t, language)
 
         if len(concepts) == 0:
             raise RuntimeError('Found no concepts in {}'.format(path))
 
         return {c.get('id'): c.data for c in concepts}
 
-    def read_file(self, filename, conceptType):
+    def read_file(self, filename, conceptType, language):
         concepts = []
         if not os.path.isfile(filename):
             return []
         f = codecs.open(filename, 'r', 'utf-8')
-        for concept in self.read_concept(f.read(), conceptType):
+        for concept in self.read_concept(f.read(), conceptType, language):
             if not concept.blank:
                 concepts.append(concept)
         f.close()
         return concepts
 
-    def read_concept(self, data, conceptType):
+    def read_concept(self, data, conceptType, language):
         concept = Concept(conceptType)
         for line in data.split('\n'):
             line = line.strip().split('= ')
@@ -116,10 +116,10 @@ class Roald2(object):
                     # concept.set('uri', uri)
                     concept.set('id', value)
                 elif key == 'te':
-                    concept.set('prefLabel.nb', value)
+                    concept.set('prefLabel.{}'.format(language), value)
                 elif key == 'bf':
-                    concept.add('altLabel.nb', value)
-                elif key in ['en', 'nn', 'la']:
+                    concept.add('altLabel.{}'.format(language), value)
+                elif key in ['en', 'nb', 'nn', 'la']:
                     if key not in concept.get('prefLabel'):
                         concept.set('prefLabel.{key}'.format(key=key), value)
                     else:

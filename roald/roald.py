@@ -2,6 +2,7 @@
 import codecs
 import json
 import os
+from iso639 import languages
 
 from .models import Roald2
 from .models import Marc21
@@ -16,32 +17,41 @@ class Roald(object):
     Example:
 
     >>> roald = roald.Roald()
-    >>> roald.importRoald2()
+    >>> roald.load('./data/', format='roald2', language='nb')
     >>> roald.save('realfagstermer.json')
-    >>> roald.exportMarc21('realfagstermer.marc21.xml')
+    >>> roald.export('realfagstermer.marc21.xml', format='marc21')
     """
 
     def __init__(self):
         super(Roald, self).__init__()
         self.concepts = Concepts()
+        self.default_language = None
 
-    def load(self, filename, format='roald3'):
+    def load(self, filename, format='roald3', language=None):
         """
             - filename : the filename to a 'roald3' file or path to a 'roald2' directory.
             - format : 'roald3' or 'roald2'.
+            - language : language code (only for 'roald2')
         """
         filename = os.path.expanduser(filename)
         if format == 'roald3':
+            if language is not None:
+                logger.warn('roald.load: Setting language has no effect when loading Roald3 data')
             data = json.load(codecs.open(filename, 'r', 'utf-8'))
+            self.default_language = languages.get(alpha2=data['default_language'])
             self.concepts.load(data['concepts'])
         elif format == 'roald2':
-            self.concepts.load(Roald2().read(filename))
+            self.default_language = languages.get(alpha2=language)
+            self.concepts.load(Roald2().read(filename, language=self.default_language.alpha2))
         else:
             raise ValueError('Unknown format')
 
     def save(self, filename):
         filename = os.path.expanduser(filename)
+        if self.default_language is None:
+            raise RuntimeError('roald.save: No default language code set.')
         data = {
+            'default_language': self.default_language.alpha2,
             'concepts': self.concepts.get()
         }
         json.dump(data, codecs.open(filename, 'w', 'utf-8'), indent=2)
@@ -49,7 +59,7 @@ class Roald(object):
     def export(self, filename, format, **kwargs):
         filename = os.path.expanduser(filename)
         if format == 'marc21':
-            m21 = Marc21(self.concepts, **kwargs)
+            m21 = Marc21(self.concepts, language=self.default_language, **kwargs)
             with open(filename, 'w') as f:
                 f.write(m21.serialize())
         elif format == 'rdfskos':
