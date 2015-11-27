@@ -66,8 +66,15 @@ class Skos(object):
             print '(Including {})'.format(self.scheme)
             graph.load(self.scheme, format='turtle')
 
+
+        try:
+            scheme_uri = next(graph.triples((None, RDF.type, SKOS.ConceptScheme)))
+        except StopIteration:
+            raise Exception('Concept scheme URI could not be found in vocabulary scheme data')
+        scheme_uri = scheme_uri[0]
+
         for concept in self.concepts:
-            self.convert_concept(graph, concept, self.concepts)
+            self.convert_concept(graph, concept, self.concepts, scheme_uri)
 
         print 'Serializing'
         stream = BytesIO()
@@ -82,7 +89,7 @@ class Skos(object):
                 out.append(y)
         return out
 
-    def convert_concept(self, graph, concept, concepts):
+    def convert_concept(self, graph, concept, concepts, scheme_uri):
         uri = URIRef(concepts.uri(concept['id']))
 
         types = self.convert_types(concept.get('type', []))
@@ -91,6 +98,8 @@ class Skos(object):
             return
         for value in types:
             graph.add((uri, RDF.type, value))
+
+        graph.add((uri, SKOS.inScheme, scheme_uri))
 
         for lang, term in concept.get('prefLabel', {}).items():
             graph.add((uri, SKOS.prefLabel, Literal(term['value'], lang=lang)))
