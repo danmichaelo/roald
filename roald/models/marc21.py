@@ -25,6 +25,7 @@ class Marc21(object):
         if concepts is not None:
             self.load(concepts)
 
+    # Todo: Move into superclass
     def load(self, data):
         if type(data) == dict:
             self.concepts = Concepts(data)
@@ -53,6 +54,35 @@ class Marc21(object):
             return value
         else:
             return '({}){}'.format(self.created_by, value)
+
+    def add_acronyms(self, builder, term, conceptType):
+
+        if term.get('hasAcronym'):
+            tag = {
+                'Temporal': '448',
+                'Topic': '450',
+                'Geographic': '451',
+                'GenreForm': '455',
+            }[conceptType]
+            with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                builder.subfield(term.get('hasAcronym'), code='a')
+
+                # Heading in the tracing field is an acronym for the heading in the 1XX field.
+                # Ref: http://www.loc.gov/marc/authority/adtracing.html
+                builder.subfield('d', code='g')
+
+        if term.get('acronymFor'):
+            tag = {
+                'Temporal': '448',
+                'Topic': '450',
+                'Geographic': '451',
+                'GenreForm': '455',
+            }[conceptType]
+            with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                builder.subfield(term.get('acronymFor'), code='a')
+
+                # No special indication possible?
+                # https://github.com/realfagstermer/roald/issues/8
 
     def convert_concept(self, builder, concept, concepts):
 
@@ -140,7 +170,8 @@ class Marc21(object):
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
 
                         # Add the first component. Always use subfield $a. Correct???
-                        builder.subfield(rel['prefLabel'][self.language.alpha2], code='a')
+                        term = rel['prefLabel'][self.language.alpha2]
+                        builder.subfield(term['value'], code='a')
 
                         # Add remaining components
                         for value in concept.get('component')[1:]:
@@ -155,10 +186,11 @@ class Marc21(object):
                             }[rel['type'][0]]
 
                             # OBS! 150 har også $b.. Men når brukes egentlig den??
-                            builder.subfield(rel['prefLabel'][self.language.alpha2], code=sf)
+                            term = rel['prefLabel'][self.language.alpha2]
+                            builder.subfield(term['value'], code=sf)
 
                 else:  # Not a compound heading
-                    for lang, value in concept.get('prefLabel').items():
+                    for lang, term in concept.get('prefLabel').items():
                         tag = {
                             'Temporal': '148',
                             'Topic': '150',
@@ -169,10 +201,13 @@ class Marc21(object):
 
                             # Always use subfield $a. Correct???
                             with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                                builder.subfield(value, code='a')
+                                builder.subfield(term['value'], code='a')
+
+                            self.add_acronyms(builder, term, conceptType)
+
 
                     # Add 448/450/451/455 See from tracings
-                    for lang, values in concept.get('altLabel', {}).items():
+                    for lang, terms in concept.get('altLabel', {}).items():
                         tag = {
                             'Temporal': '448',
                             'Topic': '450',
@@ -180,23 +215,12 @@ class Marc21(object):
                             'GenreForm': '455',
                         }[conceptType]
                         if lang == self.language.alpha2:
-                            for value in values:
+                            for term in terms:
                                 with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                                     # Always use subfield $a. Correct???
-                                    builder.subfield(value, code='a')
-                    for value in concept.get('acronym', {}):
-                        tag = {
-                            'Temporal': '448',
-                            'Topic': '450',
-                            'Geographic': '451',
-                            'GenreForm': '455',
-                        }[conceptType]
-                        with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                            builder.subfield(value, code='a')
+                                    builder.subfield(term['value'], code='a')
 
-                            # Heading in the tracing field is an acronym for the heading in the 1XX field.
-                            # Ref: http://www.loc.gov/marc/authority/adtracing.html
-                            builder.subfield('d', code='g')
+                                self.add_acronyms(builder, term, conceptType)
 
                 # 548/550/551/555 See also
                 for value in concept.get('broader', []):
@@ -208,14 +232,14 @@ class Marc21(object):
                         'GenreForm': '555',
                     }[rel['type'][0]]
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                        builder.subfield(rel['prefLabel'][self.language.alpha2], code='a')
+                        builder.subfield(rel['prefLabel'][self.language.alpha2]['value'], code='a')
                         builder.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
                         builder.subfield(self.global_cn(value), code='0')
 
                 for value in self.narrower.get(concept['id'], []):
                     rel = concepts.get(id=value)
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                        builder.subfield(rel['prefLabel'][self.language.alpha2], code='a')
+                        builder.subfield(rel['prefLabel'][self.language.alpha2]['value'], code='a')
                         builder.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
                         builder.subfield(self.global_cn(value), code='0')
 
@@ -228,7 +252,7 @@ class Marc21(object):
                         'GenreForm': '555',
                     }[rel['type'][0]]
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                        builder.subfield(rel['prefLabel'][self.language.alpha2], code='a')
+                        builder.subfield(rel['prefLabel'][self.language.alpha2]['value'], code='a')
                         builder.subfield(self.global_cn(value), code='0')
 
                 # 680 Notes
