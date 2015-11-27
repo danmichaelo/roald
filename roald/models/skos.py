@@ -116,11 +116,11 @@ class Skos(object):
 
         x = concept.get('created')
         if x is not None:
-            graph.add((uri, DCTERMS.created, Literal(x, datatype=XSD.date)))
+            graph.add((uri, DCTERMS.created, Literal(x, datatype=XSD.dateTime)))
 
-        x = concept.get('modified')
+        x = concept.get('modified', concept.get('created'))
         if x is not None:
-            graph.add((uri, DCTERMS.modified, Literal(x, datatype=XSD.date)))
+            graph.add((uri, DCTERMS.modified, Literal(x, datatype=XSD.dateTime)))
 
         x = concept.get('elementSymbol')
         if x is not None:
