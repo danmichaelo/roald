@@ -127,6 +127,8 @@ Egenskap        | Type        | Meta?  | Beskrivelse
 `definition`    | object      |        | Key-value med språkkode som key, streng som value. (valgfri)
 `scopeNote`     | object      |        | Key-value med språkkode som key, streng som value. (valgfri)
 `component`     | array       |        | (kun for strenger) : Liste av ID-er for streng-komponentene
+`related`       | array       |        | Liste av ID-er for begrep
+`broader`       | array       |        | Liste av ID-er for begrep
 `elementSymbol` | string      |        | Kjemisk symbol
 `created`       | datetime    | meta   | Dato for opprettelse (påkrevd)
 `createdBy`     | string      | meta   | (for fremtidig bruk)
