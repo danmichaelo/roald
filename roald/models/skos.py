@@ -33,8 +33,8 @@ class Skos(object):
         'Geographic': [SKOS.Concept, MADS.Geographic],
         'GenreForm': [SKOS.Concept, MADS.GenreForm],
         'Temporal': [SKOS.Concept, MADS.Temporal],
-        'CompoundHeading': [SKOS.Concept, MADS.CompoundHeading],
-        'VirtualCompoundHeading': [SKOS.Concept, MADS.CompoundHeading],
+        'CompoundHeading': [SKOS.Concept, MADS.ComplexSubject],
+        'VirtualCompoundHeading': [SKOS.Concept, MADS.ComplexSubject],
     }
 
     def __init__(self, concepts=None, scheme=None):
@@ -138,6 +138,13 @@ class Skos(object):
 
         components = [concepts.get(id=value) for value in concept.get('component', [])]
         if len(components) != 0:
+
+            for lang in ['nb']:
+                labels = [c['prefLabel'][lang]['value'] for c in components if c['prefLabel'].get(lang)]
+                if len(labels) == len(components):
+                    streng = ' : '.join(labels)
+                    graph.add((uri, SKOS.prefLabel, Literal(streng, lang=lang)))
+
             component_uris = [URIRef(concepts.uri(c['id'])) for c in components]
 
             component = component_uris.pop(0)
