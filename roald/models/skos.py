@@ -130,6 +130,12 @@ class Skos(object):
         if x is not None:
             graph.add((uri, DCTERMS.identifier, Literal(x)))
 
+        related = [concepts.get(id=value) for value in concept.get('related', [])]
+        for c in related:
+            rel_uri = URIRef(concepts.uri(c['id']))
+
+            graph.add((uri, SKOS.related, rel_uri))
+
         components = [concepts.get(id=value) for value in concept.get('component', [])]
         if len(components) != 0:
             component_uris = [URIRef(concepts.uri(c['id'])) for c in components]
