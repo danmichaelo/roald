@@ -20,7 +20,7 @@ marc21options = {
   'created_by': 'NoOU'
 }
 roald.export('realfagstermer.marc21.xml', format='marc21', **marc21options)
-roald.export('realfagstermer.ttl', format='rdfskos')
+roald.export('realfagstermer.ttl', format='rdfskos', scheme='realfagstermer.scheme.ttl')
 ```
 
 ``` {.python}
@@ -47,6 +47,24 @@ pip install -e .
 py.test
 ```
 
+Eksempler
+---------
+
+Hent en liste over 10 tilfeldige emneord:
+
+```python
+import numpy as np
+from roald import Roald
+
+roald = Roald()
+roald.load('realfagstermer.json')
+
+terms = [concept['prefLabel']['nb'] for concept in roald.concepts if 'nb' in concept['prefLabel']]
+tilfeldige = [terms[x]['value'] for x in np.random.randint(0, len(termer), 10)]
+
+```
+
+
 Datamodell: (KLADD)
 -------------------
 
@@ -68,17 +86,17 @@ kan for eksempel se slik ut:
     {
       "id": 12680
       "prefLabel": {
-        "nb": "Røye",
-        "en": "Arctic char",
-        "la": "Salvelinus alpinus"
+        "nb": {"value": "Røye"},
+        "en": {"value": "Arctic char"},
+        "la": {"value": "Salvelinus alpinus"}
       },
       "altLabel": {
         "nb": [
-          "Sjørøye",
-          "Arktisk røye",
-          "Røyer",
-          "Rør",
-          "Røyr"
+          {"value": "Sjørøye"},
+          {"value": "Arktisk røye"},
+          {"value": "Røyer"},
+          {"value": "Rør"},
+          {"value": "Røyr"}
         ]
       },
       "type": [
@@ -98,13 +116,18 @@ foretrukne termer på andre språk også må være unike.
 Hvert begrep har også ekstra metadata som dato for opprettelse og siste
 endring.
 
+#### Begrep
+
 Egenskap        | Type        | Meta?  | Beskrivelse
 ----------------|-------------|--------|-----------------------------------------------------------------------------------
 `id`            | string      |        | Unik lokal ID (påkrevd)
 `type`          | array       |        | Liste over begrepstyper fra et fast sett (se liste under)
-`prefLabel`     | object      |        | Key-value med språkkode som key, streng som value. (påkrevd)
-`altLabel`      | object      |        | Key-value med språkkode som key, array av streng. (valgfri)
+`prefLabel`     | object      |        | Key-value med språkkode som key, `Term` som value. (påkrevd)
+`altLabel`      | object      |        | Key-value med språkkode som key, array av `Term` som value. (valgfri)
+`definition`    | object      |        | Key-value med språkkode som key, streng som value. (valgfri)
+`scopeNote`     | object      |        | Key-value med språkkode som key, streng som value. (valgfri)
 `component`     | array       |        | (kun for strenger) : Liste av ID-er for streng-komponentene
+`elementSymbol` | string      |        | Kjemisk symbol
 `created`       | datetime    | meta   | Dato for opprettelse (påkrevd)
 `createdBy`     | string      | meta   | (for fremtidig bruk)
 `modified`      | datetime    | meta   | Dato for siste endring (påkrevd)
@@ -113,6 +136,14 @@ Egenskap        | Type        | Meta?  | Beskrivelse
 
 (Egenskapene merket med "meta" er egenskaper som kanskje må skilles ut i
 RDF-representasjonen hvis vi må skille mellom RWO/ikke-RWO)
+
+#### Term
+
+Egenskap        | Type        | Meta?  | Beskrivelse
+----------------|-------------|--------|-----------------------------------------------------------------------------------
+`value`         | string      |        | Termens verdi
+`acronymFor`    | string      |        | Term som `value` er akronym for
+`hasAcronym`    | string      |        | Akronym for `value`
 
 ### Begrepstyper
 
@@ -172,6 +203,44 @@ som skal registreres som
     655 $a Populærvitenskap
 
 Det er ikke helt klarlagt hvordan disse skal behandles enda.
+
+### Akronymer
+
+Kodes med `acronymFor` og `hasAcronym`.
+Se [#5](https://github.com/realfagstermer/roald/issues/5). Hvis akronymet er den foretrukne varianten:
+
+```json
+{
+  "prefLabel": {
+    "nb": {
+      "value": "LVSEM",
+      "acronymFor": "Low-Voltage Scanning Electron Microscopy"
+    },
+    "en": {
+      "value": "LVSEM",
+      "acronymFor": "Low-Voltage Scanning Electron Microscopy"
+    }
+  }
+}
+```
+
+Dette kan presenteres som `LVSEM (Low-Voltage Scanning Electron Microscopy)`.
+
+Hvis akronymet ikke er den foretrukne varianten:
+
+```json
+{
+  "prefLabel": {
+    "nb": {
+      "hasAcronym": "ISM",
+      "value": "Interstellar materie"
+    }
+  }
+}
+```
+
+Dette kan presenteres som `Interstellar materie (ISM)`.
+
 
 RDF-serialisering
 -----------------
