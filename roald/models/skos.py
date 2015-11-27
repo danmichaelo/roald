@@ -151,6 +151,7 @@ class Skos(object):
             b1 = BNode()
             graph.add((uri, MADS.componentList, b1))
             graph.add((b1, RDF.first, component))
+            graph.add((component, SKOS.broader, uri))
 
             for component in component_uris:
                 b2 = BNode()
@@ -159,5 +160,6 @@ class Skos(object):
                 b1 = b2
 
             graph.add((b1, RDF.rest, RDF.nil))
+            graph.add((component, SKOS.broader, uri))
 
 
