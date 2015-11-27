@@ -41,6 +41,7 @@ class Roald(object):
             data = json.load(codecs.open(filename, 'r', 'utf-8'))
             self.default_language = languages.get(alpha2=data['default_language'])
             self.concepts.load(data['concepts'])
+            self.concepts.uri_format = data['uri_format']
         elif format == 'roald2':
             self.default_language = languages.get(alpha2=language)
             self.concepts.load(Roald2().read(filename, language=self.default_language.alpha2))

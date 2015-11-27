@@ -59,6 +59,8 @@ class Concepts(object):
         parts = [[x.strip()[0], x.strip()[1:].strip()] for x in value.split('$') if len(x.strip()) > 0]
 
     def uri(self, id):  # TODO: Move into a new Concept class?
+        if self._uri_format is None:
+            raise Exception('URI format has not been set.')
         return self._uri_format.format(id=id[4:])
 
     def __iter__(self):
