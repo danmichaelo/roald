@@ -2,8 +2,6 @@
 import isodate
 import json
 import codecs
-from rdflib.graph import Graph, Literal
-from rdflib.namespace import Namespace, URIRef, OWL, RDF, DC, DCTERMS, FOAF, XSD, SKOS, RDFS
 
 
 class Concepts(object):

@@ -63,15 +63,16 @@ class Roald(object):
         json.dump(data, codecs.open(filename, 'w', 'utf-8'), indent=2)
 
     def export(self, filename, format, **kwargs):
-        filename = os.path.expanduser(filename)
         if format == 'marc21':
-            m21 = Marc21(self.concepts, language=self.default_language, **kwargs)
-            with open(filename, 'w') as f:
-                f.write(m21.serialize())
+            model = Marc21(self.concepts, language=self.default_language, **kwargs)
         elif format == 'rdfskos':
-            skos = Skos(self.concepts, **kwargs)
-            # with open(filename, 'w') as f:
-            #     f.write(skos.convert(self.concepts))
+            model = Skos(self.concepts, **kwargs)
+        else:
+            raise Exception('Unknown format')
+
+        filename = os.path.expanduser(filename)
+        with open(filename, 'w') as f:
+            f.write(model.serialize())
 
     def authorize(self, value):
         # <value> can take a compound heading value like "$a Component1 $x Component2 $x Component3"
