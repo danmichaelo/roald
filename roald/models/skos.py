@@ -136,6 +136,12 @@ class Skos(object):
 
             graph.add((uri, SKOS.related, rel_uri))
 
+        broader = [concepts.get(id=value) for value in concept.get('broader', [])]
+        for c in broader:
+            rel_uri = URIRef(concepts.uri(c['id']))
+
+            graph.add((uri, SKOS.broader, rel_uri))
+
         components = [concepts.get(id=value) for value in concept.get('component', [])]
         if len(components) != 0:
 
