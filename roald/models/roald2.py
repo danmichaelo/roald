@@ -143,9 +143,9 @@ class Roald2(object):
                     pass
                     # concept.add('narrower', value)
                 elif key == 'de':
-                    concept.add('definition', value)
+                    concept.add('definition.{}'.format(language), value)
                 elif key == 'no':
-                    concept.add('scopeNote', value)
+                    concept.add('scopeNote.{}'.format(language), value)
                 elif key == 'tio':
                     concept.set('created', value)
                 elif key == 'tie':

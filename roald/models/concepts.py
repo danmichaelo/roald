@@ -47,8 +47,8 @@ class Concepts(object):
         # Build lookup hashes:
         for k, v in data.items():
             if 'prefLabel' in v and 'nb' in v['prefLabel']:
-                self._ids[v['prefLabel']['nb']] = k
-                self._terms[k] = v['prefLabel']['nb']
+                self._ids[v['prefLabel']['nb']['value']] = k
+                self._terms[k] = v['prefLabel']['nb']['value']
         for k, v in data.items():
             if 'component' in v:
                 s = ' : '.join([self._terms[x] for x in v['component']])
