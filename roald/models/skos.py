@@ -4,8 +4,20 @@ from rdflib.graph import Graph, Literal
 from rdflib.namespace import Namespace, URIRef, OWL, RDF, DC, DCTERMS, FOAF, XSD, SKOS, RDFS
 from rdflib.collection import Collection
 from rdflib import BNode
+from otsrdflib import OrderedTurtleSerializer
 
 from roald.models.concepts import Concepts
+
+try:
+    from io import BytesIO
+    assert BytesIO
+except ImportError:
+    try:
+        from cStringIO import StringIO as BytesIO
+        assert BytesIO
+    except ImportError:
+        from StringIO import StringIO as BytesIO
+        assert BytesIO
 
 MADS = Namespace('http://www.loc.gov/mads/rdf/v1#')
 LOCAL = Namespace('http://data.ub.uio.no/onto#')
@@ -48,19 +60,20 @@ class Skos(object):
 
     def serialize(self):
         graph = Graph()
-        print 'Serializing'
+        print 'Building graph'
 
         if self.scheme is not None:
-            print 'Including', self.scheme
+            print '(Including {})'.format(self.scheme)
             graph.load(self.scheme, format='turtle')
 
-        for n, concept in enumerate(self.concepts):
-            if n % 1000 == 0:
-                print '{} / {}'.format(n, len(self.concepts))
+        for concept in self.concepts:
             self.convert_concept(graph, concept, self.concepts)
 
-        print 'done'
-        return graph.serialize(format='turtle')
+        print 'Serializing'
+        stream = BytesIO()
+        serializer = OrderedTurtleSerializer(graph)
+        serializer.serialize(stream)
+        return stream.getvalue()
 
     def convert_types(self, types):
         out = []
