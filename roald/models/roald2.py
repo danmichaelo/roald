@@ -209,7 +209,7 @@ class Roald2(object):
                 elif key == 'st':
                     pass
                     # concept.add('streng', value)
-                elif key in ['da', 'db', 'dx', 'dy', 'dz']:
+                elif key in ['da', 'db', 'dz', 'dy', 'dx']:
                     # uri = 'http://data.ub.uio.no/realfagstermer/{}'.format(value)
                     concept.add('component', value)
                     if key in ['dx', 'dy', 'dz']:
