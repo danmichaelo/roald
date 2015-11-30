@@ -5,6 +5,7 @@ from rdflib.namespace import Namespace, URIRef, OWL, RDF, DC, DCTERMS, FOAF, XSD
 from rdflib.collection import Collection
 from rdflib import BNode
 from otsrdflib import OrderedTurtleSerializer
+from six import binary_type
 
 from roald.models.concepts import Concepts
 
@@ -20,6 +21,7 @@ except ImportError:
         assert BytesIO
 
 MADS = Namespace('http://www.loc.gov/mads/rdf/v1#')
+SD = Namespace('http://www.w3.org/ns/sparql-service-description#')
 LOCAL = Namespace('http://data.ub.uio.no/onto#')
 
 
@@ -83,9 +85,20 @@ class Skos(object):
             self.convert_concept(graph, concept, self.concepts, scheme_uri)
 
         print 'Serializing'
-        stream = BytesIO()
         serializer = OrderedTurtleSerializer(graph)
-        serializer.serialize(stream)
+
+        # These will appear first in the file and be ordered by URI
+        serializer.topClasses = [SKOS.ConceptScheme,
+                                 FOAF.Organization,
+                                 SD.Service,
+                                 SD.Dataset,
+                                 SD.Graph,
+                                 SD.NamedGraph,
+                                 SKOS.Concept]
+
+        stream = BytesIO()
+        stream.write(binary_type('@base <http://data.ub.uio.no/> .\n'))
+        serializer.serialize(stream, base='http://data.ub.uio.no/')
         return stream.getvalue()
 
     def convert_types(self, types):
