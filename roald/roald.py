@@ -3,11 +3,14 @@ import codecs
 import json
 import os
 from iso639 import languages
+import logging
 
 from .models import Roald2
 from .models import Marc21
 from .models import Skos
 from .models import Concepts
+
+logger = logging.getLogger(__name__)
 
 
 class Roald(object):
@@ -48,6 +51,8 @@ class Roald(object):
         else:
             raise ValueError('Unknown format')
 
+        logger.info('Loaded {} concepts'.format(len(self.concepts)))
+
     def set_uri_format(self, value):
         self.concepts.uri_format = value
 
@@ -61,11 +66,14 @@ class Roald(object):
             'concepts': self.concepts.get()
         }
         json.dump(data, codecs.open(filename, 'w', 'utf-8'), indent=2)
+        logger.info('Saved {} concepts to {}'.format(len(self.concepts), filename))
 
     def export(self, filename, format, **kwargs):
         if format == 'marc21':
+            logger.info('Preparing MARC21 export')
             model = Marc21(self.concepts, language=self.default_language, **kwargs)
         elif format == 'rdfskos':
+            logger.info('Preparing RDF/SKOS export')
             model = Skos(self.concepts, **kwargs)
         else:
             raise Exception('Unknown format')
@@ -73,6 +81,8 @@ class Roald(object):
         filename = os.path.expanduser(filename)
         with open(filename, 'w') as f:
             f.write(model.serialize())
+        logger.info('Export to {} complete'.format(filename))
+
 
     def authorize(self, value):
         # <value> can take a compound heading value like "$a Component1 $x Component2 $x Component3"

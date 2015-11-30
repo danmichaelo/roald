@@ -6,6 +6,7 @@ from rdflib.collection import Collection
 from rdflib import BNode
 from otsrdflib import OrderedTurtleSerializer
 from six import binary_type
+import logging
 
 from roald.models.concepts import Concepts
 
@@ -19,6 +20,8 @@ except ImportError:
     except ImportError:
         from StringIO import StringIO as BytesIO
         assert BytesIO
+
+logger = logging.getLogger(__name__)
 
 MADS = Namespace('http://www.loc.gov/mads/rdf/v1#')
 SD = Namespace('http://www.w3.org/ns/sparql-service-description#')
@@ -69,7 +72,7 @@ class Skos(object):
 
     def serialize(self):
 
-        print 'Building graph'
+        logger.info('Building RDF graph')
 
         graph = Graph()
 
@@ -77,8 +80,9 @@ class Skos(object):
         graph.bind('ubo', 'onto#')
 
         for inc in self.include:
-            print '  Including {}'.format(inc)
+            lg0 = len(graph)
             graph.load(inc, format=self.extFromFilename(inc))
+            logger.info(' - Included {} triples from {}'.format(len(graph) - lg0, inc))
 
         try:
             scheme_uri = next(graph.triples((None, RDF.type, SKOS.ConceptScheme)))
@@ -86,10 +90,13 @@ class Skos(object):
             raise Exception('Concept scheme URI could not be found in vocabulary scheme data')
         scheme_uri = scheme_uri[0]
 
+        now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        lg0 = len(graph)
         for concept in self.concepts:
             self.convert_concept(graph, concept, self.concepts, scheme_uri)
+        logger.info(' - Added {} triples'.format(len(graph) - lg0))
 
-        print 'Serializing'
+        logger.info('Serializing RDF graph')
         serializer = OrderedTurtleSerializer(graph)
 
         # These will appear first in the file and be ordered by URI
