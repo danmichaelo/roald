@@ -89,11 +89,13 @@ class Marc21(object):
         if concept.get('created'):
             created = isodate.parse_datetime(concept.get('created'))
         else:
-            created = isodate.isodatetime.datetime.now()
-        if concept.get('created') is None:
-            modified = created
+            # Tja... Mrtermer har ingen datoer(!)
+            created = isodate.isodatetime.datetime.now()  # isodate.isodatetime.datetime(2010, 1, 1)
+
+        if concept.get('modified'):
+            modified = isodate.parse_datetime(concept.get('modified'))
         else:
-            modified = isodate.parse_datetime(concept.get('created'))
+            modified = created
 
         # Loop over concept types
         for conceptType in concept.get('type'):
