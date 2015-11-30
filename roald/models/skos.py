@@ -155,20 +155,25 @@ class Skos(object):
             graph.add((uri, SKOS.prefLabel, Literal(term['value'], lang=lang)))
 
             if term.get('hasAcronym'):
-                graph.add((uri, LOCAL.acronym, Literal(term['hasAcronym'], lang=lang)))
+                # @TODO Temporary while thinking...
+                # graph.add((uri, LOCAL.acronym, Literal(term['hasAcronym'], lang=lang)))
+                graph.add((uri, SKOS.altLabel, Literal(term['hasAcronym'])))
 
         for lang, terms in concept.get('altLabel', {}).items():
             for term in terms:
                 graph.add((uri, SKOS.altLabel, Literal(term['value'], lang=lang)))
 
                 if term.get('hasAcronym'):
-                    graph.add((uri, LOCAL.acronym, Literal(term['hasAcronym'], lang=lang)))
+                    # @TODO Temporary while thinking...
+                    # graph.add((uri, LOCAL.acronym, Literal(term['hasAcronym'], lang=lang)))
+                    graph.add((uri, SKOS.altLabel, Literal(term['hasAcronym'])))
 
         for lang, value in concept.get('definition', {}).items():
             graph.add((uri, SKOS.definition, Literal(value, lang=lang)))
 
         for lang, value in concept.get('scopeNote', {}).items():
-            graph.add((uri, SKOS.scopeNote, Literal(value, lang=lang)))
+            # @TODO For backwards compability
+            graph.add((uri, SKOS.editorialNote, Literal(value, lang=lang)))
 
         for value in concept.get('acronym', []):
             graph.add((uri, LOCAL.acronym, Literal(value)))
