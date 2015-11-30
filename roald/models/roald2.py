@@ -105,7 +105,7 @@ class Roald2(object):
         return concepts
 
 
-    def add_acronyms(self, concept, acronyms, language):
+    def add_acronyms_and_components(self, concept, acronyms, language, components):
         for value in acronyms:
             pvalue = re.sub('-', '', value)
             if value in self.elementSymbols:
@@ -146,12 +146,18 @@ class Roald2(object):
                     term['hasAcronym'] = value
                 if len(acronym_for) == 0:
                     concept.add('altLabel.{key}'.format(key=language), {'value': value, 'acronymFor': '?'})
+
+        for co in ['da', 'db', 'dz', 'dy', 'dx']:
+            for c in components[co]:
+                concept.add('component', c)
+
         return concept
 
 
     def read_concept(self, data, conceptType, language):
         concept = Concept(conceptType)
         acronyms = []
+        components = {'da': [], 'db': [], 'dx': [], 'dy': [], 'dz': []}
         lines = data.split('\n')
 
         # First pass
@@ -159,8 +165,9 @@ class Roald2(object):
             line = line.strip().split('= ')
             if len(line) == 1:
                 if not concept.blank:
-                    yield self.add_acronyms(concept, acronyms, language)
+                    yield self.add_acronyms_and_components(concept, acronyms, language, components)
                 acronyms = []
+                components = {'da': [], 'db': [], 'dx': [], 'dy': [], 'dz': []}
                 concept = Concept(conceptType)
             else:
                 key, value = line
@@ -209,9 +216,9 @@ class Roald2(object):
                 elif key == 'st':
                     pass
                     # concept.add('streng', value)
-                elif key in ['da', 'db', 'dz', 'dy', 'dx']:
+                elif key in ['da', 'db', 'dx', 'dy', 'dz']:
                     # uri = 'http://data.ub.uio.no/realfagstermer/{}'.format(value)
-                    concept.add('component', value)
+                    components[key].append(value)
                     if key in ['dx', 'dy', 'dz']:
                         concept.set_type('VirtualCompoundHeading')
 
@@ -219,4 +226,4 @@ class Roald2(object):
                     print 'Unknown key: {}'.format(key)
 
         if not concept.blank:
-            yield self.add_acronyms(concept, acronyms, language)
+            yield self.add_acronyms_and_components(concept, acronyms, language, components)
