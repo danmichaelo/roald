@@ -13,6 +13,6 @@ setup(name='roald',
       author_email='danmichaelo@gmail.com',
       url='https://github.com/scriptotek/roald',
       license='MIT',
-      packages=['roald'],
+      packages=['roald', 'roald.models'],
       install_requires=['xmlwitch', 'isodate', 'lxml', 'rdflib', 'iso-639', 'otsrdflib']
       )
