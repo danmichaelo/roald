@@ -189,6 +189,9 @@ class Skos(object):
         if x is not None:
             graph.add((uri, DCTERMS.identifier, Literal(x)))
 
+        for x in concept.get('ddc', []):
+            graph.add((uri, DCTERMS.DDC, Literal(x)))
+
         related = [concepts.get(id=value) for value in concept.get('related', [])]
         for c in related:
             rel_uri = URIRef(concepts.uri(c['id']))
