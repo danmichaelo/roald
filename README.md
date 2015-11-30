@@ -21,7 +21,8 @@ marc21options = {
 }
 roald.export('realfagstermer.marc21.xml', format='marc21', **marc21options)
 roald.export('realfagstermer.ttl', format='rdfskos',
-             include=['realfagstermer.scheme.ttl', 'mumapper.ttl'])
+             include=['realfagstermer.scheme.ttl'], mappings_from=['mumapper.rdf'])
+
 ```
 
 ``` {.python}

@@ -42,10 +42,11 @@ class Skos(object):
         'VirtualCompoundHeading': [SKOS.Concept, MADS.ComplexSubject],
     }
 
-    def __init__(self, concepts=None, include=None):
+    def __init__(self, concepts=None, include=None, mappings_from=None):
         """
             - concepts : Concepts object or list of concepts
-            - include : List of Turtle file to include
+            - include : List of files to include
+            - mappings_from : List of files to only include mapping relations from
         """
         super(Skos, self).__init__()
         if concepts is not None:
@@ -54,6 +55,10 @@ class Skos(object):
             self.include = []
         else:
             self.include = include
+        if mappings_from is None:
+            self.mappings_from = []
+        else:
+            self.mappings_from = mappings_from
 
 
     # Todo: Move into superclass
@@ -83,6 +88,14 @@ class Skos(object):
             lg0 = len(graph)
             graph.load(inc, format=self.extFromFilename(inc))
             logger.info(' - Included {} triples from {}'.format(len(graph) - lg0, inc))
+
+        for inc in self.mappings_from:
+            lg0 = len(graph)
+            tmp = Graph()
+            tmp.load(inc, format=self.extFromFilename(inc))
+            for tr in tmp.triples_choices((None, [SKOS.exactMatch, SKOS.closeMatch, SKOS.broadMatch, SKOS.narrowMatch, SKOS.relatedMatch], None)):
+                graph.add(tr)
+            logger.info(' - Included {} mappings from {}'.format(len(graph) - lg0, inc))
 
         try:
             scheme_uri = next(graph.triples((None, RDF.type, SKOS.ConceptScheme)))
