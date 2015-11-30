@@ -68,8 +68,13 @@ class Skos(object):
         return 'xml'
 
     def serialize(self):
-        graph = Graph()
+
         print 'Building graph'
+
+        graph = Graph()
+
+        # @TODO: Temporary fix for https://github.com/RDFLib/rdflib/issues/560
+        graph.bind('ubo', 'onto#')
 
         for inc in self.include:
             print '  Including {}'.format(inc)
@@ -97,7 +102,10 @@ class Skos(object):
                                  SKOS.Concept]
 
         stream = BytesIO()
+
+        # @TODO: Temporary fix for https://github.com/RDFLib/rdflib/issues/559
         stream.write(binary_type('@base <http://data.ub.uio.no/> .\n'))
+
         serializer.serialize(stream, base='http://data.ub.uio.no/')
         return stream.getvalue()
 
