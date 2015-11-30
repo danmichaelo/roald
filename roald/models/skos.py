@@ -6,6 +6,7 @@ from rdflib.collection import Collection
 from rdflib import BNode
 from otsrdflib import OrderedTurtleSerializer
 from six import binary_type
+from datetime import datetime
 import logging
 
 from roald.models.concepts import Concepts
@@ -104,6 +105,8 @@ class Skos(object):
         scheme_uri = scheme_uri[0]
 
         now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        graph.set((URIRef(scheme_uri), DCTERMS.modified, Literal(now, datatype=XSD.dateTime)))
+
         lg0 = len(graph)
         for concept in self.concepts:
             self.convert_concept(graph, concept, self.concepts, scheme_uri)
