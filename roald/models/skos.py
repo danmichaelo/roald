@@ -37,15 +37,18 @@ class Skos(object):
         'VirtualCompoundHeading': [SKOS.Concept, MADS.ComplexSubject],
     }
 
-    def __init__(self, concepts=None, scheme=None):
+    def __init__(self, concepts=None, include=None):
         """
             - concepts : Concepts object or list of concepts
-            - scheme : Turtle file with initial vocabulary configuration
+            - include : List of Turtle file to include
         """
         super(Skos, self).__init__()
         if concepts is not None:
             self.load(concepts)
-        self.scheme = scheme
+        if include is None:
+            self.include = []
+        else:
+            self.include = include
 
 
     # Todo: Move into superclass
@@ -57,15 +60,18 @@ class Skos(object):
         else:
             raise ValueError
 
+    def extFromFilename(self, fn):
+        if fn.endswith('.ttl'):
+            return 'turtle'
+        return 'xml'
 
     def serialize(self):
         graph = Graph()
         print 'Building graph'
 
-        if self.scheme is not None:
-            print '(Including {})'.format(self.scheme)
-            graph.load(self.scheme, format='turtle')
-
+        for inc in self.include:
+            print '  Including {}'.format(inc)
+            graph.load(inc, format=self.extFromFilename(inc))
 
         try:
             scheme_uri = next(graph.triples((None, RDF.type, SKOS.ConceptScheme)))

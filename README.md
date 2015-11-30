@@ -20,7 +20,8 @@ marc21options = {
   'created_by': 'NoOU'
 }
 roald.export('realfagstermer.marc21.xml', format='marc21', **marc21options)
-roald.export('realfagstermer.ttl', format='rdfskos', scheme='realfagstermer.scheme.ttl')
+roald.export('realfagstermer.ttl', format='rdfskos',
+             include=['realfagstermer.scheme.ttl', 'mumapper.ttl'])
 ```
 
 ``` {.python}
