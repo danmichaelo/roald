@@ -157,7 +157,7 @@ class Skos(object):
             if term.get('hasAcronym'):
                 # @TODO Temporary while thinking...
                 # graph.add((uri, LOCAL.acronym, Literal(term['hasAcronym'], lang=lang)))
-                graph.add((uri, SKOS.altLabel, Literal(term['hasAcronym'])))
+                graph.add((uri, SKOS.altLabel, Literal(term['hasAcronym'], lang=lang)))
 
         for lang, terms in concept.get('altLabel', {}).items():
             for term in terms:
@@ -166,7 +166,7 @@ class Skos(object):
                 if term.get('hasAcronym'):
                     # @TODO Temporary while thinking...
                     # graph.add((uri, LOCAL.acronym, Literal(term['hasAcronym'], lang=lang)))
-                    graph.add((uri, SKOS.altLabel, Literal(term['hasAcronym'])))
+                    graph.add((uri, SKOS.altLabel, Literal(term['hasAcronym'], lang=lang)))
 
         for lang, value in concept.get('definition', {}).items():
             graph.add((uri, SKOS.definition, Literal(value, lang=lang)))
