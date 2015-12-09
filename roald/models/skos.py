@@ -82,9 +82,6 @@ class Skos(object):
 
         graph = Graph()
 
-        # @TODO: Temporary fix for https://github.com/RDFLib/rdflib/issues/560
-        graph.bind('ubo', 'onto#')
-
         for inc in self.include:
             lg0 = len(graph)
             graph.load(inc, format=self.extFromFilename(inc))
@@ -125,11 +122,7 @@ class Skos(object):
                                  SKOS.Concept]
 
         stream = BytesIO()
-
-        # @TODO: Temporary fix for https://github.com/RDFLib/rdflib/issues/559
-        stream.write(binary_type('@base <http://data.ub.uio.no/> .\n'))
-
-        serializer.serialize(stream, base='http://data.ub.uio.no/')
+        serializer.serialize(stream)
         return stream.getvalue()
 
     def convert_types(self, types):
