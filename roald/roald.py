@@ -5,9 +5,9 @@ import os
 from iso639 import languages
 import logging
 
-from .models import Roald2
-from .models import Marc21
-from .models import Skos
+from .adapters import Roald2
+from .adapters import Marc21
+from .adapters import Skos
 from .models import Concepts
 
 logger = logging.getLogger(__name__)
