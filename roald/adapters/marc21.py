@@ -125,9 +125,10 @@ class Marc21(object):
                 builder.controlfield(field008, tag='008')
 
                 # 024 Other Standard Identifier
-                with builder.datafield(tag='024', ind1='7', ind2=' '):
-                    builder.subfield(concepts.uri(concept.get('id')), code='a')
-                    builder.subfield('uri', code='2')
+                if concepts.uri_format is not None:
+                    with builder.datafield(tag='024', ind1='7', ind2=' '):
+                        builder.subfield(concepts.uri(concept.get('id')), code='a')
+                        builder.subfield('uri', code='2')
 
                 # 035 System control number ?
                 # Her kan vi legge inn ID-er fra andre systemer, f.eks. BARE?
