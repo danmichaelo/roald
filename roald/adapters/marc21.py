@@ -36,6 +36,12 @@ class Marc21(object):
 
     def serialize(self):
 
+        if self.language is None:
+            raise StandardError('MARC21 serialization needs language.')
+
+        if type(self.language) != iso639.iso639._Language:
+            raise StandardError('MARC21 language must be an instance of iso639.iso639._Language.')
+
         # Make a dictionary of narrower concepts for fast lookup
         self.narrower = {}
         for c in self.concepts:
