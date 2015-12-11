@@ -4,22 +4,37 @@ import unittest
 from lxml import etree
 from StringIO import StringIO
 import pytest
+from iso639 import languages
 
-from roald.models.marc21 import Marc21, Concepts
+from roald.adapters.marc21 import Marc21, Concepts
 
 
 class TestConverter(unittest.TestCase):
+
+    def test_no_language(self):
+        # Expects error if no language set
+        m21 = Marc21({})
+        with pytest.raises(StandardError):
+            m21.serialize()
+
+    def test_no_language(self):
+        # Expects error if language of wrong datatype (string, not object)
+        m21 = Marc21({}, 'nb')
+        with pytest.raises(StandardError):
+            m21.serialize()
 
     def test_acronym(self):
         # Expects acronym to be converted to 450 $a, having $g d
         m21 = Marc21({
             '1': {
                 'id': '1',
-                'prefLabel': {'nb': 'Forente nasjoner'},
-                'acronym': ['FN'],
+                'prefLabel': {'nb': {
+                    'value': 'Forente nasjoner',
+                    'hasAcronym': 'FN'
+                }},
                 'type': ['Topic']
             }
-        })
+        }, language=languages.get(alpha2='nb'))
         tree = etree.parse(StringIO(m21.serialize()))
 
         f150 = tree.xpath('//m:record/m:datafield[@tag="150"]' +
@@ -35,17 +50,19 @@ class TestConverter(unittest.TestCase):
         self.assertEqual(1, len(f450))
 
     def test_load(self):
+
         c = {
             '1': {
                 'id': '1',
-                'prefLabel': {'nb': 'Forente nasjoner'},
-                'acronym': ['FN'],
+                'prefLabel': {'nb': {
+                    'value': 'Forente nasjoner'
+                }},
                 'type': ['Topic']
             }
         }
 
         # Should accept a dict
-        m21 = Marc21(c)
+        m21 = Marc21(c, language=languages.get(alpha2='nb'))
         self.assertEqual(Concepts, type(m21.concepts))
 
         # Should accept a Concepts object
@@ -61,10 +78,10 @@ class TestConverter(unittest.TestCase):
         m21 = Marc21({
             '1': {
                 'id': '1',
-                'prefLabel': {'nb': 'Science fiction'},
+                'prefLabel': {'nb': {'value': 'Science fiction'}},
                 'type': ['GenreForm', 'Topic']
             }
-        })
+        }, language=languages.get(alpha2='nb'))
         tree = etree.parse(StringIO(m21.serialize()))
         c = tree.xpath('count(//m:record)',
                        namespaces={'m': 'http://www.loc.gov/MARC21/slim'})

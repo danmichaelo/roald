@@ -15,11 +15,11 @@ class TestConverter(unittest.TestCase):
         concepts.load({
             'REAL012789': {
                 'id': 'REAL012789',
-                'prefLabel': {'nb': 'Fornybar energi'}
+                'prefLabel': {'nb': {'value': 'Fornybar energi'}}
             },
             'REAL013995': {
                 'id': 'REAL013995',
-                'prefLabel': {'nb': 'Livssyklusanalyse'}
+                'prefLabel': {'nb': {'value': 'Livssyklusanalyse'}}
             },
             'REAL022146': {
                 'id': 'REAL022146',

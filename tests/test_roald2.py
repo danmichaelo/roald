@@ -5,7 +5,7 @@ from lxml import etree
 from StringIO import StringIO
 import pytest
 
-from roald.models.roald2 import Roald2, Concept
+from roald.adapters.roald2 import Roald2, Concept
 
 
 class TestConverter(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestConverter(unittest.TestCase):
         c.set_type('Geographic')
         self.assertEqual(['Geographic'], c.get('type'))
         c.set_type('GenreForm')
-        self.assertEqual(['GenreForm', 'Topic'], c.get('type'))
+        self.assertEqual(['GenreForm'], c.get('type'))
         c.set_type('CompoundHeading')
         self.assertEqual(['CompoundHeading'], c.get('type'))
         c.set_type('VirtualCompoundHeading')
@@ -35,10 +35,10 @@ class TestConverter(unittest.TestCase):
         """
 
         rii = Roald2()
-        concepts = [x for x in rii.read_concept(data, 'GenreForm')]
+        concepts = [x for x in rii.read_concept(data, 'GenreForm', 'sv')]
 
         self.assertEqual(1, len(concepts))
-        self.assertEqual(set(['GenreForm', 'Topic']), set(concepts[0].get('type')))
+        self.assertEqual(set(['GenreForm']), set(concepts[0].get('type')))
         self.assertEqual('REAL030070', concepts[0].get('id'))
-        self.assertEqual('Atlas', concepts[0].get('prefLabel').get('nb'))
-        self.assertEqual('Verdensatlas', concepts[0].get('altLabel').get('nb')[0])
+        self.assertEqual('Atlas', concepts[0]['prefLabel']['sv']['value'])
+        self.assertEqual('Verdensatlas', concepts[0]['altLabel']['sv'][0]['value'])
