@@ -4,6 +4,18 @@ Roald III backend - en begynnelse
 Python-pakke som foreløpig tar seg av konvertering av data. Pakken
 importerer data (fra Roald 2) og eksporterer (som MARC21XML og RDF/SKOS)
 
+For å kjøre tester:
+
+``` {.bash}
+pip install -e .
+py.test
+```
+
+Eksempler
+---------
+
+#### Fra Roald 2 til Roald 3, MARC21 og RDF/SKOS
+
 For å importere Roald 2-data, lagre Roald 3-data (JSON) og eksportere
 som MARC21XML og RDF/SKOS:
 
@@ -16,7 +28,7 @@ roald.set_uri_format('http://data.ub.uio.no/realfagstermer/c{id}')
 roald.save('realfagstermer.json')
 
 marc21options = {
-  'vocabulary': 'noubomn',
+  'vocabulary_code': 'noubomn',
   'created_by': 'NoOU'
 }
 roald.export('realfagstermer.marc21.xml', format='marc21', **marc21options)
@@ -33,7 +45,7 @@ roald.set_uri_format('http://data.ub.uio.no/mr/c{id}')
 roald.save('menneskerettighetstermer.json')
 
 marc21options = {
-  'vocabulary': 'noubomr',
+  'vocabulary_code': 'noubomr',
   'created_by': 'NoOU'
 }
 roald.export('menneskerettighetstermer.marc21.xml', format='marc21', **marc21options)
@@ -42,17 +54,9 @@ roald.export('menneskerettighetstermer.ttl', format='rdfskos')
 
 (Her er `~/fuse/riidata` montert med sshfs til `/net/app-evs/w3-vh/no.uio.www_80/ub/emnesok/htdocs/data/`)
 
-For å kjøre tester:
+#### Tilfeldig uttrekk
 
-``` {.bash}
-pip install -e .
-py.test
-```
-
-Eksempler
----------
-
-Hent en liste over 10 tilfeldige emneord:
+For å hente ut en liste over 10 tilfeldige emneord:
 
 ```python
 import numpy as np
@@ -67,20 +71,23 @@ tilfeldige = [terms[x]['value'] for x in np.random.randint(0, len(termer), 10)]
 ```
 
 
-Datamodell: (KLADD)
--------------------
+Datamodell (KLADD)
+------------------
 
-Realfagstermer er et kontrollert sett av *begreper* eller
-*autoriteter*?? som kan brukes som *emner* (for å beskrive dokumenters
+Et vokabular (`Vocabulary`) har et sett av ressurser (`Resource`).
+Hver ressurs kan være enten et *begrep* (`Concept`) eller en
+*samling* (`Collection`).
+
+Begreper er *autoriteter* som kan brukes som *emner* (for å beskrive dokumenters
 innhold, geografiske eller kronologiske avgrensning). Noen kan også
 brukes for å beskrive dokumenters bibliografiske form eller sjanger.
-Omfangsmessig kan vi si at Realfagstermer tilsvarer LCSH + LCGF (men
-ikke f.eks. LC/NAF).
 
-Et begrep (`Concept`) identifiseres ved en lokal numerisk identifikator,
-som kan mappes til en global URI for datautveksling.
+Samlinger er fasetter eller grupper som brukes for navigasjon i vokabularet.
 
-Hvert begrep kan ha én foretrukket/anbefalt term (`prefLabel`) per språk
+Alle ressurser identifiseres ved en lokal numerisk identifikator,
+som mappes til en global URI for datautveksling.
+
+Hver ressurs kan ha én foretrukket/anbefalt term (`prefLabel`) per språk
 og 0 eller flere ikke-foretrukne termer (`altLabel`) per språk. Et emne
 kan for eksempel se slik ut:
 (http://data.ub.uio.no/realfagstermer/c012680)
@@ -107,16 +114,18 @@ kan for eksempel se slik ut:
     }
 
 Selv om det i modellen vår er den numeriske identifikatoren som primært
-identifiserer begrepet. Samtidig må vi forholde oss til klassiske
-biblioteksystemer som Bibsys og Alma, der det er såkalte indekstermer
+identifiserer begrepet, må vi forholde oss til klassiske
+biblioteksystemer som Bibsys og Alma, der det er såkalte *indekstermer*
 som primært identifiserer et begrep. Som indekstermer bruker vi de
 foretrukne termene på norsk bokmål, og alle emner *må* derfor ha én
 *unik* foretrukken term på norsk bokmål. For å ikke gjøre skillet mellom
 ulike språk større enn nødvendig har vi foreløpig operert med at
 foretrukne termer på andre språk også må være unike.
 
-Hvert begrep har også ekstra metadata som dato for opprettelse og siste
+Hver ressurs har også ekstra metadata som dato for opprettelse og siste
 endring.
+
+### Klasser
 
 #### Begrep
 

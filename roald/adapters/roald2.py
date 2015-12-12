@@ -4,7 +4,7 @@ import xmlwitch
 import codecs
 import os
 import re
-from ..models.concept import Concept
+from ..models.resources import Concept
 
 
 class Roald2(object):
@@ -14,10 +14,14 @@ class Roald2(object):
 
     elementSymbols = ['Ag', 'Al', 'Am', 'Ar', 'As', 'At', 'Au', 'B', 'Ba', 'Be', 'Bh', 'Bi', 'Bk', 'Br', 'C', 'Ca', 'Cd', 'Ce', 'Cf', 'Cl', 'Cm', 'Cn', 'Co', 'Cr', 'Cs', 'Cu', 'Db', 'Ds', 'Dy', 'Er', 'Es', 'Eu', 'F', 'Fe', 'Fl', 'Fm', 'Fr', 'Ga', 'Gd', 'Ge', 'H', 'He', 'Hf', 'Hg', 'Ho', 'Hs', 'I', 'In', 'Ir', 'K', 'Kr', 'La', 'Li', 'Lr', 'Lu', 'Lv', 'Md', 'Mg', 'Mn', 'Mo', 'Mt', 'N', 'Na', 'Nb', 'Nd', 'Ne', 'Ni', 'No', 'Np', 'O', 'Os', 'P', 'Pa', 'Pb', 'Pd', 'Pm', 'Po', 'Pr', 'Pt', 'Pu', 'Ra', 'Rb', 'Re', 'Rf', 'Rg', 'Rh', 'Rn', 'Ru', 'S', 'Sb', 'Sc', 'Se', 'Sg', 'Si', 'Sm', 'Sn', 'Sr', 'Ta', 'Tb', 'Tc', 'Te', 'Th', 'Ti', 'Tl', 'Tm', 'U', 'Uuo', 'Uup', 'Uus', 'Uut', 'V', 'W', 'Xe', 'Y', 'Yb', 'Zn', 'Zr']
 
-    def __init__(self):
+    def __init__(self, vocabulary):
         super(Roald2, self).__init__()
+        self.vocabulary = vocabulary
 
-    def read(self, path='./', language='en'):
+    def load(self, path='./', language_code=None):
+
+        if language_code is None:
+            language_code = self.vocabulary.default_language.alpha2
 
         files = {
             'idtermer.txt': 'Topic',
@@ -27,28 +31,29 @@ class Roald2(object):
             'idstrenger.txt': 'CompoundHeading',
         }
 
-        concepts = []
+        resources = []
         for f, t in files.items():
-            concepts += self.read_file(path + f, t, language)
+            resources += self.read_file(path + f, t, language_code)
 
-        if len(concepts) == 0:
-            raise RuntimeError('Found no concepts in {}'.format(path))
+        if len(resources) == 0:
+            raise RuntimeError('Found no resources in {}'.format(path))
 
-        return {c.get('id'): c.data for c in concepts}
+        data = {c.get('id'): c.data for c in resources}
+        self.vocabulary.resources.load(data)
 
-    def read_file(self, filename, conceptType, language):
+    def read_file(self, filename, conceptType, language_code):
         concepts = []
         if not os.path.isfile(filename):
             return []
         f = codecs.open(filename, 'r', 'utf-8')
-        for concept in self.read_concept(f.read(), conceptType, language):
+        for concept in self.read_concept(f.read(), conceptType, language_code):
             if not concept.blank:
                 concepts.append(concept)
         f.close()
         return concepts
 
 
-    def add_acronyms_and_components(self, concept, acronyms, language, components):
+    def add_acronyms_and_components(self, concept, acronyms, language_code, components):
         for value in acronyms:
             pvalue = re.sub('-', '', value)
             if value in self.elementSymbols:
@@ -88,7 +93,7 @@ class Roald2(object):
                 for term in acronym_for:
                     term['hasAcronym'] = value
                 if len(acronym_for) == 0:
-                    concept.add('altLabel.{key}'.format(key=language), {'value': value, 'acronymFor': '?'})
+                    concept.add('altLabel.{key}'.format(key=language_code), {'value': value, 'acronymFor': '?'})
 
         for co in ['da', 'db', 'dz', 'dy', 'dx']:
             for c in components[co]:
@@ -97,7 +102,7 @@ class Roald2(object):
         return concept
 
 
-    def read_concept(self, data, conceptType, language):
+    def read_concept(self, data, conceptType, language_code):
         concept = Concept(conceptType)
         acronyms = []
         components = {'da': [], 'db': [], 'dx': [], 'dy': [], 'dz': []}
@@ -108,7 +113,7 @@ class Roald2(object):
             line = line.strip().split('= ')
             if len(line) == 1:
                 if not concept.blank:
-                    yield self.add_acronyms_and_components(concept, acronyms, language, components)
+                    yield self.add_acronyms_and_components(concept, acronyms, language_code, components)
                 acronyms = []
                 components = {'da': [], 'db': [], 'dx': [], 'dy': [], 'dz': []}
                 concept = Concept(conceptType)
@@ -119,9 +124,9 @@ class Roald2(object):
                     # concept.set('uri', uri)
                     concept.set('id', value)
                 elif key == 'te':
-                    concept.set('prefLabel.{}'.format(language), {'value': value})
+                    concept.set('prefLabel.{}'.format(language_code), {'value': value})
                 elif key == 'bf':
-                    concept.add('altLabel.{}'.format(language), {'value': value})
+                    concept.add('altLabel.{}'.format(language_code), {'value': value})
                 elif key in ['en', 'nb', 'nn', 'la']:
                     if key not in concept.get('prefLabel'):
                         concept.set('prefLabel.{key}'.format(key=key), {'value': value})
@@ -146,9 +151,9 @@ class Roald2(object):
                     pass
                     # concept.add('narrower', value)
                 elif key == 'de':
-                    concept.set('definition.{}'.format(language), value)
+                    concept.set('definition.{}'.format(language_code), value)
                 elif key == 'no':
-                    concept.set('scopeNote.{}'.format(language), value)
+                    concept.set('scopeNote.{}'.format(language_code), value)
                 elif key == 'tio':
                     concept.set('created', value)
                 elif key == 'tie':
@@ -169,4 +174,4 @@ class Roald2(object):
                     print 'Unknown key: {}'.format(key)
 
         if not concept.blank:
-            yield self.add_acronyms_and_components(concept, acronyms, language, components)
+            yield self.add_acronyms_and_components(concept, acronyms, language_code, components)

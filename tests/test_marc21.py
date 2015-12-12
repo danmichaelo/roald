@@ -6,26 +6,29 @@ from StringIO import StringIO
 import pytest
 from iso639 import languages
 
-from roald.adapters.marc21 import Marc21, Concepts
+from roald.adapters.marc21 import Marc21
+from roald.models.resources import Resources
+from roald.models.vocabulary import Vocabulary
 
 
 class TestConverter(unittest.TestCase):
 
     def test_no_language(self):
         # Expects error if no language set
-        m21 = Marc21({})
+        m21 = Marc21(Vocabulary())
         with pytest.raises(StandardError):
             m21.serialize()
 
     def test_no_language(self):
         # Expects error if language of wrong datatype (string, not object)
-        m21 = Marc21({}, 'nb')
+        m21 = Marc21(Vocabulary())
         with pytest.raises(StandardError):
             m21.serialize()
 
     def test_acronym(self):
         # Expects acronym to be converted to 450 $a, having $g d
-        m21 = Marc21({
+        voc = Vocabulary()
+        voc.resources.load({
             '1': {
                 'id': '1',
                 'prefLabel': {'nb': {
@@ -34,7 +37,9 @@ class TestConverter(unittest.TestCase):
                 }},
                 'type': ['Topic']
             }
-        }, language=languages.get(alpha2='nb'))
+        })
+        voc.default_language = languages.get(alpha2='nb')
+        m21 = Marc21(voc)
         tree = etree.parse(StringIO(m21.serialize()))
 
         f150 = tree.xpath('//m:record/m:datafield[@tag="150"]' +
@@ -50,6 +55,7 @@ class TestConverter(unittest.TestCase):
         self.assertEqual(1, len(f450))
 
     def test_load(self):
+        # Should accept a Vocabulary object
 
         c = {
             '1': {
@@ -60,28 +66,26 @@ class TestConverter(unittest.TestCase):
                 'type': ['Topic']
             }
         }
+        voc = Vocabulary()
+        voc.resources.load(c)
+        voc.default_language = languages.get(alpha2='nb')
 
-        # Should accept a dict
-        m21 = Marc21(c, language=languages.get(alpha2='nb'))
-        self.assertEqual(Concepts, type(m21.concepts))
+        m21 = Marc21(voc)
+        self.assertEqual(Resources, type(m21.vocabulary.resources))
 
-        # Should accept a Concepts object
-        m21 = Marc21(Concepts(c))
-        self.assertEqual(Concepts, type(m21.concepts))
-
-        # Should not accept random stuff
-        with pytest.raises(ValueError):
-            m21 = Marc21('random stuff')
 
     def test_multiple_types(self):
         # A concept with two types should generate two records
-        m21 = Marc21({
+        voc = Vocabulary()
+        voc.default_language = languages.get(alpha2='nb')
+        voc.resources.load({
             '1': {
                 'id': '1',
                 'prefLabel': {'nb': {'value': 'Science fiction'}},
                 'type': ['GenreForm', 'Topic']
             }
-        }, language=languages.get(alpha2='nb'))
+        })
+        m21 = Marc21(voc)
         tree = etree.parse(StringIO(m21.serialize()))
         c = tree.xpath('count(//m:record)',
                        namespaces={'m': 'http://www.loc.gov/MARC21/slim'})

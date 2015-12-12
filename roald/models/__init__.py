@@ -1,2 +1,2 @@
-from concepts import Concepts
-from concept import Concept
+from .resources import Resources, Concepts, Concept, Collection
+from .vocabulary import Vocabulary

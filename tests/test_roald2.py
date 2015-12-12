@@ -5,25 +5,11 @@ from lxml import etree
 from StringIO import StringIO
 import pytest
 
-from roald.adapters.roald2 import Roald2, Concept
+from roald.adapters.roald2 import Roald2
+from roald.models.vocabulary import Vocabulary
 
 
 class TestConverter(unittest.TestCase):
-
-    def test_set_type(self):
-        c = Concept('Topic')
-        self.assertEqual(['Topic'], c.get('type'))
-        c.set_type('Geographic')
-        self.assertEqual(['Geographic'], c.get('type'))
-        c.set_type('GenreForm')
-        self.assertEqual(['GenreForm'], c.get('type'))
-        c.set_type('CompoundHeading')
-        self.assertEqual(['CompoundHeading'], c.get('type'))
-        c.set_type('VirtualCompoundHeading')
-        self.assertEqual(['VirtualCompoundHeading'], c.get('type'))
-
-        with pytest.raises(ValueError):
-            c.set_type('SomeRandomStuff')
 
     def test_read_concept(self):
 
@@ -34,7 +20,10 @@ class TestConverter(unittest.TestCase):
         tio= 2015-02-20T13:08:04Z
         """
 
-        rii = Roald2()
+        voc = Vocabulary()
+        voc.default_language = 'sv'
+
+        rii = Roald2(voc)
         concepts = [x for x in rii.read_concept(data, 'GenreForm', 'sv')]
 
         self.assertEqual(1, len(concepts))
