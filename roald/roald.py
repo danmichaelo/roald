@@ -47,6 +47,9 @@ class Roald(object):
         elif format == 'roald2':
             self.vocabulary.default_language = languages.get(alpha2=language)
             Roald2(self.vocabulary).load(filename)
+        elif format == 'bibsys':
+            self.vocabulary.default_language = languages.get(alpha2=language)
+            Bibsys(self.vocabulary).load(filename)
         else:
             raise ValueError('Unknown format')
 
