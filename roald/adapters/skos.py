@@ -36,12 +36,12 @@ class Skos(object):
     typemap = {
         'Group': [SKOS.Collection, ISOTHES.ConceptGroup],
         'Collection': [SKOS.Collection, ISOTHES.ThesaurusArray],
-        'Topic': [SKOS.Concept, MADS.Topic],
-        'Geographic': [SKOS.Concept, MADS.Geographic],
-        'GenreForm': [SKOS.Concept, MADS.GenreForm],
-        'Temporal': [SKOS.Concept, MADS.Temporal],
-        'CompoundHeading': [SKOS.Concept, MADS.ComplexSubject],
-        'VirtualCompoundHeading': [SKOS.Concept, MADS.ComplexSubject],
+        'Topic': [SKOS.Concept, LOCAL.Topic],
+        'Geographic': [SKOS.Concept, LOCAL.Place],
+        'GenreForm': [SKOS.Concept, LOCAL.GenreForm],
+        'Temporal': [SKOS.Concept, LOCAL.Time],
+        'CompoundHeading': [SKOS.Concept, LOCAL.CompoundConcept],
+        'VirtualCompoundHeading': [SKOS.Concept, LOCAL.VirtualCompoundConcept],
     }
 
     def __init__(self, vocabulary, include=None, mappings_from=None):
