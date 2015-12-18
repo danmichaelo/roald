@@ -77,14 +77,6 @@ class Skos(object):
             graph.load(inc, format=self.extFromFilename(inc))
             logger.info(' - Included {} triples from {}'.format(len(graph) - lg0, inc))
 
-        for inc in self.mappings_from:
-            lg0 = len(graph)
-            tmp = Graph()
-            tmp.load(inc, format=self.extFromFilename(inc))
-            for tr in tmp.triples_choices((None, [SKOS.exactMatch, SKOS.closeMatch, SKOS.broadMatch, SKOS.narrowMatch, SKOS.relatedMatch], None)):
-                graph.add(tr)
-            logger.info(' - Included {} mappings from {}'.format(len(graph) - lg0, inc))
-
         try:
             scheme_uri = next(graph.triples((None, RDF.type, SKOS.ConceptScheme)))
         except StopIteration:
@@ -98,6 +90,16 @@ class Skos(object):
         for resource in self.vocabulary.resources:
             self.convert_resource(graph, resource, self.vocabulary.resources, scheme_uri)
         logger.info(' - Added {} triples'.format(len(graph) - lg0))
+
+        all_concepts = set([tr[0] for tr in graph.triples((None, RDF.type, SKOS.Concept))])
+        for inc in self.mappings_from:
+            lg0 = len(graph)
+            tmp = Graph()
+            tmp.load(inc, format=self.extFromFilename(inc))
+            for tr in tmp.triples_choices((None, [SKOS.exactMatch, SKOS.closeMatch, SKOS.broadMatch, SKOS.narrowMatch, SKOS.relatedMatch], None)):
+                if tr[0] in all_concepts:
+                    graph.add(tr)
+            logger.info(' - Added {} mappings from {}'.format(len(graph) - lg0, inc))
 
         logger.info('Serializing RDF graph')
         serializer = OrderedTurtleSerializer(graph)
