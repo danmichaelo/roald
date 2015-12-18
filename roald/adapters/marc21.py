@@ -123,7 +123,7 @@ class Marc21(object):
                 builder.controlfield(modified.strftime('%Y%m%d%H%M%S.0'), tag='005')
 
                 # 008 General Information / Informasjonskoder
-                field008 = '{created}|||a|z||||||          || a||     d'.format(created=created.strftime('%y%m%d'))
+                field008 = '{created}|||anz|naabn          |a|ana|||| d'.format(created=created.strftime('%y%m%d'))
                 builder.controlfield(field008, tag='008')
 
                 # 024 Other Standard Identifier
