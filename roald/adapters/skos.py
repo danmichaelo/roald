@@ -116,6 +116,9 @@ class Skos(object):
                                  SD.Dataset,
                                  SD.Graph,
                                  SD.NamedGraph,
+                                 OWL.Class,
+                                 OWL.DatatypeProperty,
+                                 SKOS.Collection,
                                  SKOS.Concept]
 
         stream = BytesIO()
