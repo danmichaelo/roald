@@ -153,7 +153,9 @@ class Roald2(object):
                 elif key == 'de':
                     concept.set('definition.{}'.format(language_code), value)
                 elif key == 'no':
-                    concept.set('scopeNote.{}'.format(language_code), value)
+                    # @TODO: Disse har tradisjonelt havnet i skos:editorialNote,
+                    #        men de fleste kan antakelig flyttes til scopeNote
+                    concept.add('editorialNote', value)
                 elif key == 'tio':
                     concept.set('created', value)
                 elif key == 'tie':
