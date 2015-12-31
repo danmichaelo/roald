@@ -101,6 +101,10 @@ class Marc21(object):
             if resourceType == 'VirtualCompoundHeading':
                 continue
 
+            if resourceType == 'KnuteTerm':
+                # @TODO: Not sure how to handle these
+                continue
+
             if resourceType == 'Collection':
                 # @TODO: Not sure how to handle these
                 continue
@@ -233,6 +237,7 @@ class Marc21(object):
                     'Topic': '550',
                     'Geographic': '551',
                     'GenreForm': '555',
+                    'KnuteTerm': '550'  # @TODO: ???
                 }
                 for value in resource.get('broader', []):
                     rel = resources.get(id=value)
@@ -260,6 +265,7 @@ class Marc21(object):
                         'Topic': '550',
                         'Geographic': '551',
                         'GenreForm': '555',
+                        'KnuteTerm': '550'  # @TODO: ???
                     }[rel['type'][0]]
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                         builder.subfield(rel['prefLabel'][self.language.alpha2]['value'], code='a')

@@ -137,10 +137,12 @@ Egenskap        | Type        | Meta?  | Beskrivelse
 `altLabel`      | object      |        | Key-value med språkkode som key, array av `Term` som value. (valgfri)
 `definition`    | object      |        | Key-value med språkkode som key, streng som value. (valgfri)
 `scopeNote`     | object      |        | Key-value med språkkode som key, streng som value. (valgfri)
+`editorialNote` | array       |        | Lukket bemerkning. Språk er alltid vokabularets standardspråk. (valgfri)
 `component`     | array       |        | (kun for strenger) : Liste av ID-er for streng-komponentene
 `related`       | array       |        | Liste av ID-er for begrep
 `broader`       | array       |        | Liste av ID-er for begrep
 `elementSymbol` | string      |        | Kjemisk symbol
+`isTopTerm`     | boolean     |        | (for Humord)
 `created`       | datetime    | meta   | Dato for opprettelse (påkrevd)
 `createdBy`     | string      | meta   | (for fremtidig bruk)
 `modified`      | datetime    | meta   | Dato for siste endring (påkrevd)

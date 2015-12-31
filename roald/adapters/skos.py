@@ -42,6 +42,7 @@ class Skos(object):
         'Temporal': [SKOS.Concept, LOCAL.Time],
         'CompoundHeading': [SKOS.Concept, LOCAL.CompoundConcept],
         'VirtualCompoundHeading': [SKOS.Concept, LOCAL.VirtualCompoundConcept],
+        'KnuteTerm': [SKOS.Concept, LOCAL.KnuteTerm],
     }
 
     def __init__(self, vocabulary, include=None, mappings_from=None):
@@ -88,7 +89,7 @@ class Skos(object):
 
         lg0 = len(graph)
         for resource in self.vocabulary.resources:
-            self.convert_resource(graph, resource, self.vocabulary.resources, scheme_uri)
+            self.convert_resource(graph, resource, self.vocabulary.resources, scheme_uri, self.vocabulary.default_language.alpha2)
         logger.info(' - Added {} triples'.format(len(graph) - lg0))
 
         all_concepts = set([tr[0] for tr in graph.triples((None, RDF.type, SKOS.Concept))])
@@ -124,7 +125,7 @@ class Skos(object):
                 out.append(y)
         return out
 
-    def convert_resource(self, graph, resource, resources, scheme_uri):
+    def convert_resource(self, graph, resource, resources, scheme_uri, default_language):
         uri = URIRef(self.vocabulary.uri(resource['id']))
 
         types = self.convert_types(resource.get('type', []))
@@ -134,7 +135,10 @@ class Skos(object):
         for value in types:
             graph.add((uri, RDF.type, value))
 
-        graph.add((uri, SKOS.inScheme, scheme_uri))
+        if resource.get('isTopConcept'):
+            graph.add((uri, SKOS.topConceptOf, scheme_uri))
+        else:
+            graph.add((uri, SKOS.inScheme, scheme_uri))
 
         for lang, term in resource.get('prefLabel', {}).items():
             graph.add((uri, SKOS.prefLabel, Literal(term['value'], lang=lang)))
@@ -156,9 +160,12 @@ class Skos(object):
         for lang, value in resource.get('definition', {}).items():
             graph.add((uri, SKOS.definition, Literal(value, lang=lang)))
 
-        for lang, value in resource.get('scopeNote', {}).items():
-            # @TODO For backwards compability
-            graph.add((uri, SKOS.editorialNote, Literal(value, lang=lang)))
+        for lang, values in resource.get('scopeNote', {}).items():
+            for value in values:
+                graph.add((uri, SKOS.scopeNote, Literal(value, lang=lang)))
+
+        for value in resource.get('editorialNote', []):
+            graph.add((uri, SKOS.editorialNote, Literal(value, lang=default_language)))
 
         for value in resource.get('acronym', []):
             graph.add((uri, LOCAL.acronym, Literal(value)))

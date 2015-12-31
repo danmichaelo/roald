@@ -57,13 +57,19 @@ class Bibsys(object):
         if record.find('se-id') is not None:  # We'll handle those in the second pass
             return
 
-        ident = record.find('term-id').text
+        if record.find('gen-se-henvisning') is not None:
+            # @TODO: Need to figure out how to handle.
+            logger.warn(u'Ignoring gen-se-henvisning')
+            return
 
-        for node in record.findall('overordnetterm-id'):
-            parents[ident] = parents.get(ident, []) + [node.text]
+        ident = record.find('term-id').text
 
         if record.find('type') is not None and record.find('type').text == 'F':
             obj = Collection()
+            resources[ident] = obj
+
+        elif record.find('type') is not None and record.find('type').text == 'K':
+            obj = Concept('KnuteTerm')
             resources[ident] = obj
 
         else:
@@ -71,6 +77,15 @@ class Bibsys(object):
             resources[ident] = obj
 
         obj.set('id', ident)
+
+        for node in record.findall('toppterm-id'):
+            if node.text == ident:
+                obj.set('isTopConcept', True)
+
+        if not obj.get('isTopConcept') is True:
+            for node in record.findall('overordnetterm-id') + record.findall('ox-id'):
+                parents[ident] = parents.get(ident, []) + [node.text]
+
         obj.set('prefLabel.{}.value'.format(language), self.get_label(record))
 
         dato = record.find('dato').text
@@ -79,8 +94,15 @@ class Bibsys(object):
         for node in record.findall('definisjon'):
             obj.set('definition.{}'.format(language), node.text)
 
+        for node in record.findall('gen-se-ogsa-henvisning'):
+            obj.add('scopeNote.{}'.format(language), u'Se også: {}'.format(node.text))
+
         for node in record.findall('noter'):
-            obj.set('editorialNote.{}'.format(language), node.text)
+            # Ihvertfall i Humord virker disse temmelig interne... Mulig noen kan flyttes til scopeNote
+            obj.add('editorialNote', node.text)
+
+        for node in record.findall('lukket-bemerkning'):
+            obj.add('editorialNote', u'Lukket bemerkning: {}'.format(node.text))
 
     def get_parents(self, parents, resources, tid):
         out = []
@@ -99,8 +121,6 @@ class Bibsys(object):
         tid = record.find('term-id').text
 
         if record.find('gen-se-henvisning') is not None:
-            # TODO: Add a note
-            logger.warn(u'Ignoring gen-se-henvisning')
             return
 
         if record.find('se-id') is not None:
@@ -117,12 +137,13 @@ class Bibsys(object):
             else:
                 resource.add('related', related['id'])
 
-        if tid in resources:
-            if isinstance(resource, Concept):
-                for parent in self.get_parents(parents, resources, tid):
-                    resource.add('broader', parent['id'])
+        # Add normal hierarchical relations
+        if isinstance(resource, Concept) and not resource.get('isTopConcept') is True:
+            for parent in self.get_parents(parents, resources, tid):
+                resource.add('broader', parent['id'])
 
-        for node in record.findall('overordnetterm-id'):
+        # Add facet relations
+        for node in record.findall('overordnetterm-id') + record.findall('ox-id'):
             broader = resources[node.text]
             if isinstance(broader, Collection):
                 broader.add('member', resource['id'])
