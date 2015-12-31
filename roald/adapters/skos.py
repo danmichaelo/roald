@@ -45,6 +45,10 @@ class Skos(object):
         'KnuteTerm': [SKOS.Concept, LOCAL.KnuteTerm],
     }
 
+    options = {
+        'include_narrower': False
+    }
+
     def __init__(self, vocabulary, include=None, mappings_from=None):
         """
             - vocabulary : Vocabulary object
@@ -208,11 +212,13 @@ class Skos(object):
             rel_uri = URIRef(self.vocabulary.uri(c['id']))
 
             graph.add((uri, SKOS.broader, rel_uri))
-            graph.add((rel_uri, SKOS.narrower, uri))
+            if self.options['include_narrower']:
+                graph.add((rel_uri, SKOS.narrower, uri))
 
         components = [resources.get(id=value) for value in resource.get('component', [])]
         if len(components) != 0:
 
+            # @TODO: Generalize
             for lang in ['nb']:
                 labels = [c['prefLabel'][lang]['value'] for c in components if c['prefLabel'].get(lang)]
                 if len(labels) == len(components):
@@ -226,7 +232,8 @@ class Skos(object):
             graph.add((uri, MADS.componentList, b1))
             graph.add((b1, RDF.first, component))
             graph.add((uri, SKOS.broader, component))
-            graph.add((component, SKOS.narrower, uri))
+            if self.options['include_narrower']:
+                graph.add((component, SKOS.narrower, uri))
 
             for component in component_uris:
                 b2 = BNode()
