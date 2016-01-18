@@ -104,15 +104,15 @@ class Marc21(Adapter):
                 # No special indication possible?
                 # https://github.com/realfagstermer/roald/issues/8
 
-    def tag_from_type(base, res_type):
+    def tag_from_type(self, base, res_type):
         vals = {
             'Temporal': 48,
             'Topic': 50,
             'Geographic': 51,
             'GenreForm': 55,
-            'KnuteTerm': '50'  # ... or..?
+            'KnuteTerm': 50  # ... or..?
         }
-        return ''.format(base + vals[res_type])
+        return '{:d}'.format(base + vals[res_type])
 
     def convert_resource(self, builder, resource, resources, mappings):
 
@@ -128,7 +128,7 @@ class Marc21(Adapter):
             modified = created
 
         uri = self.vocabulary.uri(resource.get('id'))
-        ddc_matcher = re.compile(r'http://data.ub.uio.no/ddc/([0-9.]+)')
+        ddc_matcher = re.compile(r'http://data.ub.uio.no/ddc/([T0-9.-]+)')
         mappingRelationsRepr = {
             SKOS.exactMatch: '=EQ',
             SKOS.closeMatch: '~EQ',
@@ -215,9 +215,10 @@ class Marc21(Adapter):
                     m = ddc_matcher.match(tr[2])
                     if m:
                         self.nmappings += 1
+                        ddc_number = m.group(1).replace('T', 'H')
                         # logger.info('Add mapping to %s', m.group(1))
                         with builder.datafield(tag='083', ind1='0', ind2=' '):
-                            builder.subfield(m.group(1), code='a')
+                            builder.subfield(ddc_number, code='a')
                             builder.subfield(mappingRelationsRepr[tr[1]], code='c')
                             builder.subfield('23', code='2')
 
@@ -259,9 +260,9 @@ class Marc21(Adapter):
                     for lang, term in resource.prefLabel.items():
 
                         if lang == self.language.alpha2:
-                            tag = tag_from_type(100, resourceType)
+                            tag = self.tag_from_type(100, resourceType)
                         else:
-                            tag = tag_from_type(400, resourceType)
+                            tag = self.tag_from_type(400, resourceType)
 
                         # Always use subfield $a. Correct???
                         with builder.datafield(tag=tag, ind1=' ', ind2=' '):
@@ -274,7 +275,7 @@ class Marc21(Adapter):
                     # Add 448/450/451/455 See from tracings
                     for lang, terms in resource.get('altLabel', {}).items():
 
-                        tag = tag_from_type(400, resourceType)
+                        tag = self.tag_from_type(400, resourceType)
                         # if lang == self.language.alpha2:
                         for term in terms:
                             with builder.datafield(tag=tag, ind1=' ', ind2=' '):
@@ -314,7 +315,7 @@ class Marc21(Adapter):
 
                 for value in resource.get('related', []):
                     rel = resources.get(id=value)
-                    tag = tag_from_type(500, rel['type'][0])
+                    tag = self.tag_from_type(500, rel['type'][0])
                     # Note: rel['type'][0] can be 'KnuteTerm'! How to handle?
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                         builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
