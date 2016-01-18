@@ -160,9 +160,24 @@ class Marc21(object):
                         builder.subfield('msc', code='2')
 
                 # 083 DDC number
-                for value in resource.get('ddc', []):
-                    with builder.datafield(tag='083', ind1='0', ind2='4'):
-                        builder.subfield(value, code='a')
+                #
+                # We exclude these from the MARC21 export at the moment since
+                # we don't want thse numbers to end up in WebDewey until they have
+                # been reviewed by the mapping project team
+                #
+                # for value in resource.get('ddc', []):
+                #     with builder.datafield(tag='083', ind1='0', ind2=' '):
+                #         builder.subfield(value, code='a')
+
+                for tr in mappings.triples((URIRef(uri), None, None)):
+                    m = ddc_matcher.match(tr[2])
+                    if m:
+                        self.nmappings += 1
+                        # logger.info('Add mapping to %s', m.group(1))
+                        with builder.datafield(tag='083', ind1='0', ind2=' '):
+                            builder.subfield(m.group(1), code='a')
+                            builder.subfield(mappingRelationsRepr[tr[1]], code='c')
+                            builder.subfield('23', code='2')
 
                 # 148/150/151/155 Authorized heading
                 if resourceType == 'CompoundHeading':
