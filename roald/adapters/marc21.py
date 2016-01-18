@@ -3,11 +3,18 @@ import isodate
 import xmlwitch
 import iso639
 import logging
+from six import text_type
+from rdflib import URIRef
+from rdflib.graph import Graph, Literal
+from rdflib.namespace import SKOS
+import re
+
+from .adapter import Adapter
 
 logger = logging.getLogger(__name__)
 
 
-class Marc21(object):
+class Marc21(Adapter):
     """
     Class for exporting data as MARC21
     """
@@ -19,20 +26,30 @@ class Marc21(object):
     vocabulary_code = None  # Vocabulary code, 040 $f
     language = None  # Default language code for 040 $b
 
-    def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None):
+    def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, mappings_from=None):
         super(Marc21, self).__init__()
         self.vocabulary = vocabulary
         self.created_by = created_by
         self.vocabulary_code = vocabulary_code
         self.language = language or self.vocabulary.default_language
+        if mappings_from is None:
+            self.mappings_from = []
+        else:
+            self.mappings_from = mappings_from
 
     def serialize(self):
 
         if self.language is None:
-            raise StandardError('MARC21 serialization needs language.')
+            raise RuntimeError('MARC21 serialization needs language.')
 
         if type(self.language) != iso639.iso639._Language:
-            raise StandardError('MARC21 language must be an instance of iso639.iso639._Language.')
+            raise RuntimeError('MARC21 language must be an instance of iso639.iso639._Language.')
+
+        # Load mappings
+        mappings = Graph()
+        for inc in self.mappings_from:
+            self.load_mappings(inc, mappings)
+            #logger.info(' - Loaded {} (two-way) mappings from {}'.format(len(mappings), inc))
 
         # Make a dictionary of narrower resources for fast lookup
         self.narrower = {}
@@ -42,10 +59,15 @@ class Marc21(object):
 
         builder = xmlwitch.Builder(version='1.0', encoding='utf-8')
 
+        self.nmappings = 0
         with builder.collection(xmlns='info:lc/xmlns/marcxchange-v1'):
             for resource in self.vocabulary.resources:
-                self.convert_resource(builder, resource, self.vocabulary.resources)
-        return str(builder)
+                self.convert_resource(builder, resource, self.vocabulary.resources, mappings)
+
+        logger.info(' - Included %d DDC mappings', self.nmappings)
+
+        s = text_type(builder)
+        return s.encode('utf-8')
 
     def global_cn(self, value):
         if self.created_by is None:
@@ -55,7 +77,7 @@ class Marc21(object):
 
     def add_acronyms(self, builder, term, resourceType):
 
-        if term.get('hasAcronym'):
+        if term.hasAcronym:
             tag = {
                 'Temporal': '448',
                 'Topic': '450',
@@ -63,13 +85,13 @@ class Marc21(object):
                 'GenreForm': '455',
             }[resourceType]
             with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                builder.subfield(term.get('hasAcronym'), code='a')
+                builder.subfield(term.hasAcronym, code='a')
 
                 # Heading in the tracing field is an acronym for the heading in the 1XX field.
                 # Ref: http://www.loc.gov/marc/authority/adtracing.html
                 builder.subfield('d', code='g')
 
-        if term.get('acronymFor'):
+        if term.acronymFor:
             tag = {
                 'Temporal': '448',
                 'Topic': '450',
@@ -77,7 +99,7 @@ class Marc21(object):
                 'GenreForm': '455',
             }[resourceType]
             with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                builder.subfield(term.get('acronymFor'), code='a')
+                builder.subfield(term.acronymFor, code='a')
 
                 # No special indication possible?
                 # https://github.com/realfagstermer/roald/issues/8
@@ -88,6 +110,7 @@ class Marc21(object):
             'Topic': 50,
             'Geographic': 51,
             'GenreForm': 55,
+            'KnuteTerm': '50'  # ... or..?
         }
         return ''.format(base + vals[res_type])
 
@@ -103,6 +126,16 @@ class Marc21(object):
             modified = isodate.parse_datetime(resource.get('modified'))
         else:
             modified = created
+
+        uri = self.vocabulary.uri(resource.get('id'))
+        ddc_matcher = re.compile(r'http://data.ub.uio.no/ddc/([0-9.]+)')
+        mappingRelationsRepr = {
+            SKOS.exactMatch: '=EQ',
+            SKOS.closeMatch: '~EQ',
+            SKOS.relatedMatch: 'RM',
+            SKOS.broadMatch: 'BM',
+            SKOS.narrowMatch: 'NM'
+        }
 
         # Loop over resource types
         for resourceType in resource.get('type'):
@@ -142,7 +175,7 @@ class Marc21(object):
                 # 024 Other Standard Identifier
                 if self.vocabulary.uri_format is not None:
                     with builder.datafield(tag='024', ind1='7', ind2=' '):
-                        builder.subfield(self.vocabulary.uri(resource.get('id')), code='a')
+                        builder.subfield(uri, code='a')
                         builder.subfield('uri', code='2')
 
                 # 035 System control number ?
@@ -203,8 +236,8 @@ class Marc21(object):
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
 
                         # Add the first component. Always use subfield $a. Correct???
-                        term = rel['prefLabel'][self.language.alpha2]
-                        builder.subfield(term['value'], code='a')
+                        term = rel.prefLabel[self.language.alpha2]
+                        builder.subfield(term.value, code='a')
 
                         # Add remaining components
                         for value in resource.get('component')[1:]:
@@ -219,40 +252,37 @@ class Marc21(object):
                             }[rel['type'][0]]
 
                             # OBS! 150 har også $b.. Men når brukes egentlig den??
-                            term = rel['prefLabel'][self.language.alpha2]
-                            builder.subfield(term['value'], code=sf)
+                            term = rel.prefLabel[self.language.alpha2]
+                            builder.subfield(term.value, code=sf)
 
                 else:  # Not a compound heading
-                    for lang, term in resource.get('prefLabel').items():
-                        tag = {
-                            'Temporal': '148',
-                            'Topic': '150',
-                            'Geographic': '151',
-                            'GenreForm': '155',
-                        }[resourceType]
+                    for lang, term in resource.prefLabel.items():
+
                         if lang == self.language.alpha2:
+                            tag = tag_from_type(100, resourceType)
+                        else:
+                            tag = tag_from_type(400, resourceType)
 
-                            # Always use subfield $a. Correct???
-                            with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                                builder.subfield(term['value'], code='a')
+                        # Always use subfield $a. Correct???
+                        with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                            builder.subfield(term.value, code='a')
 
+                        # Atm. acronyms only for primary language
+                        if lang == self.language.alpha2:
                             self.add_acronyms(builder, term, resourceType)
-
 
                     # Add 448/450/451/455 See from tracings
                     for lang, terms in resource.get('altLabel', {}).items():
-                        tag = {
-                            'Temporal': '448',
-                            'Topic': '450',
-                            'Geographic': '451',
-                            'GenreForm': '455',
-                        }[resourceType]
-                        if lang == self.language.alpha2:
-                            for term in terms:
-                                with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                                    # Always use subfield $a. Correct???
-                                    builder.subfield(term['value'], code='a')
 
+                        tag = tag_from_type(400, resourceType)
+                        # if lang == self.language.alpha2:
+                        for term in terms:
+                            with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                                # Always use subfield $a. Correct???
+                                builder.subfield(term.value, code='a')
+
+                            # Atm. acronyms only for primary language
+                            if lang == self.language.alpha2:
                                 self.add_acronyms(builder, term, resourceType)
 
                 # 548/550/551/555 See also
@@ -268,7 +298,7 @@ class Marc21(object):
                     rel_type = rel['type'][0]
                     if rel_type in tags:
                         with builder.datafield(tag=tags[rel_type], ind1=' ', ind2=' '):
-                            builder.subfield(rel['prefLabel'][self.language.alpha2]['value'], code='a')
+                            builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
                             builder.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
                             builder.subfield(self.global_cn(value), code='0')
                     else:
@@ -278,21 +308,16 @@ class Marc21(object):
                     rel = resources.get(id=value)
                     rel_type = rel['type'][0]
                     with builder.datafield(tag=tags[rel_type], ind1=' ', ind2=' '):
-                        builder.subfield(rel['prefLabel'][self.language.alpha2]['value'], code='a')
+                        builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
                         builder.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
                         builder.subfield(self.global_cn(value), code='0')
 
                 for value in resource.get('related', []):
                     rel = resources.get(id=value)
-                    tag = {
-                        'Temporal': '548',
-                        'Topic': '550',
-                        'Geographic': '551',
-                        'GenreForm': '555',
-                        'KnuteTerm': '550'  # @TODO: ???
-                    }[rel['type'][0]]
+                    tag = tag_from_type(500, rel['type'][0])
+                    # Note: rel['type'][0] can be 'KnuteTerm'! How to handle?
                     with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                        builder.subfield(rel['prefLabel'][self.language.alpha2]['value'], code='a')
+                        builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
                         builder.subfield(self.global_cn(value), code='0')
 
                 # 680 Notes

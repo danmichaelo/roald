@@ -11,6 +11,14 @@ pip install -e .
 py.test
 ```
 
+Eventuelt:
+
+``` {.bash}
+pyenv local 2.6.9 2.7.11 3.3.6 3.4.3 3.5.1
+pip install tox tox-pyenv
+tox
+```
+
 Eksempler
 ---------
 

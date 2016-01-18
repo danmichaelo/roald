@@ -1,5 +1,6 @@
 import json
 import codecs
+from iso639 import languages
 
 
 class Roald3(object):
@@ -28,7 +29,7 @@ class Roald3(object):
         data = {
             'default_language': self.vocabulary.default_language.alpha2,
             'uri_format': self.vocabulary.uri_format,
-            'resources': self.vocabulary.resources.get()
+            'resources': self.vocabulary.resources.serialize()
         }
 
         with codecs.open(filename, 'w', 'utf-8') as stream:

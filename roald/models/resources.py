@@ -1,76 +1,169 @@
 # encoding=utf-8
+from __future__ import print_function
 import isodate
 import json
 import codecs
+from copy import deepcopy
+from six import text_type
+from ..util import array_set, array_add, array_get
+from ..errors import InvalidDataException
+
+try:
+    from functools import reduce  # Python
+except:
+    pass
+
+class Label(object):
+
+    def __init__(self, value=None):
+        self.value = None
+        self.hasAcronym = None
+        self.acronymFor = None
+        # lang = None
+
+        if value is not None:
+            self.value = value
+
+    def set(self, key, value):
+        self.__setattr__(key, value)
+        return self  # for chaining
+
+    def load(self, data):
+        self.value = data.get('value')
+        self.hasAcronym = data.get('hasAcronym')
+        self.acronymFor = data.get('acronymFor')
+        # self.lang = data.get('lang')
+        return self  # for chaining
+
+    def serialize(self):
+        o = {}
+        if self.value:
+            o['value'] = self.value
+        if self.hasAcronym:
+            o['hasAcronym'] = self.hasAcronym
+        if self.acronymFor:
+            o['acronymFor'] = self.acronymFor
+        return o
 
 
 class Resource(object):
 
-    def __init__(self):
+    def __init__(self, uri_formatter=None):
         super(Resource, self).__init__()
-        self.data = {
-            'prefLabel': {}
-        }
         self.blank = True
+        self.uri_formatter = uri_formatter
+        self._data = {
+            'prefLabel': {},
+            'altLabel': {},
+            'hiddenLabel': {}
+        }
+
+    @property
+    def prefLabel(self):
+        return self._data['prefLabel']
+
+    @prefLabel.setter
+    def prefLabel(self, value):
+        self._data['prefLabel'] = value
+
+    @property
+    def altLabel(self):
+        return self._data['altLabel']
+
+    @altLabel.setter
+    def altLabel(self, value):
+        self._data['altLabel'] = value
+
+    @property
+    def hiddenLabel(self):
+        return self._data['hiddenLabel']
+
+    @hiddenLabel.setter
+    def hiddenLabel(self, value):
+        self._data['hiddenLabel'] = value
+
+    def load(self, data):
+        self._data = deepcopy(data)
+
+        for lang, label in self._data.get('prefLabel', {}).items():
+            array_set(self._data, 'prefLabel.{}'.format(lang), Label().load(label))
+
+        for lang, labels in self._data.get('altLabel', {}).items():
+            array_set(self._data, 'altLabel.{}'.format(lang), [Label().load(label) for label in labels])
+
+        for lang, labels in self._data.get('hiddenLabel', {}).items():
+            array_set(self._data, 'hiddenLabel.{}'.format(lang), [Label().load(label) for label in labels])
+
+        return self  # for chaining
+
+    def serialize(self):
+        data = deepcopy(self._data)
+
+        for lang, label in data.get('prefLabel', {}).items():
+            data['prefLabel'][lang] = data['prefLabel'][lang].serialize()
+
+        for lang, labels in self._data.get('altLabel', {}).items():
+            data['altLabel'][lang] = [label.serialize() for label in labels]
+
+        for lang, labels in self._data.get('hiddenLabel', {}).items():
+            data['hiddenLabel'][lang] = [label.serialize() for label in labels]
+
+        return data
 
     def add(self, key, value):
         self.blank = False
-        key = key.split('.')
-        data = self.data
-        while len(key) != 0:
-            k = key.pop(0)
-            if k not in data:
-                data[k] = [] if len(key) == 0 else {}
-            if len(key) == 0:
-                data[k].append(value)
-            data = data[k]
+        array_add(self._data, key, value)
+        return self  # for chaining
 
     def set(self, key, value):
         self.blank = False
-        if key == 'type':
-            self.set_type(value)
-            return
-        origkey = key
-        key = key.split('.')
-        data = self.data
-        while len(key) != 0:
-            k = key.pop(0)
-            if k not in data:
-                data[k] = {}
-            if len(key) == 0:
-                if data[k] != {}:
-                    raise StandardError('Uh oh, {} defined two times for the same resource! Dump: {}'.format(origkey, json.dumps(self.__dict__)))
-                data[k] = value
-            data = data[k]
+        array_set(self._data, key, value, False)
+        return self  # for chaining
 
     def get(self, key, default=None):
-        return self.data.get(key, default)
+        return array_get(self._data, key, default)
 
     def __getitem__(self, key):
-        return self.data[key]
+        return self._data[key]
+
+    def __contains__(self, key):
+        return key in self._data
+
+    def __getattr__(self, name):
+        if name in ['__bases__']:
+            return object.__getattr__(name)
+        if name in self._data:
+            return self._data[name]
+        raise AttributeError
+
+    def uri(self):  # TODO: Move into Resource class
+        if self.uri_formatter is None:
+            raise Exception('No URI formatter has been set.')
+        return self.uri_formatter.format(id=id[4:])
+
 
 
 class Group(Resource):
 
     def __init__(self):
         super(Group, self).__init__()
-        self.data['type'] = 'Group'
+        self._data['type'] = 'Group'
 
 
 class Collection(Resource):
 
     def __init__(self):
         super(Collection, self).__init__()
-        self.data['type'] = ['Collection']
+        self._data['type'] = ['Collection']
 
 
 class Concept(Resource):
     """docstring for Concept"""
 
-    def __init__(self, conceptType):
+    def __init__(self, conceptType=None):
         super(Concept, self).__init__()
-        self.set_type(conceptType)
-        self.blank = True
+        if conceptType is not None:
+            self.set_type(conceptType)
 
     def set_type(self, conceptType):
 
@@ -83,7 +176,8 @@ class Concept(Resource):
         # if conceptType == 'GenreForm':
         #    conceptTypes.append('Topic')
 
-        self.data['type'] = conceptTypes
+        self._data['type'] = conceptTypes
+        return self  # for chaining
 
 
 class Resources(object):
@@ -93,16 +187,14 @@ class Resources(object):
 
     string_separator = ' : '
 
-    def __init__(self, data={}, uri_format=None):
+    def __init__(self, uri_format=None):
         """
             - data: dict
             - uri_format : the URI format string, example: 'http://data.me/{id}'
         """
         super(Resources, self).__init__()
-        self._ids = {}
-        self._terms = {}
         self._uri_format = uri_format
-        self.load(data)
+        self.reset()
 
     @property
     def uri_format(self):
@@ -112,43 +204,82 @@ class Resources(object):
     def uri_format(self, value):
         self._uri_format = value
 
-    def get(self, id=None, term=None):
+    def get(self, id=None, term=None, lang=None):
         if id is not None:
-            return self._data[id]
+            return self._resource_from_id[id]
+        if term is not None and lang is not None:
+            return self._resource_from_id[self._id_from_term[term][lang]]
         if term is not None:
-            return self._data[self._ids[term]]
-        return self._data
+            if term not in self._id_from_term:
+                raise KeyError('Term not found')
+            ids = set(self._id_from_term[term].values())
+            if len(ids) > 1:
+                raise KeyError('Term maps to more than one concept. Please specify lang.')
+            return self._resource_from_id[ids.pop()]
+        return self._resources
+
+    def reset(self):
+        self._resources = []  # data container
+        self._resource_from_id = {}  # fast lookup hash
+        self._id_from_term = {}  # fast lookup hash
+        self._term_from_id = {}  # fast lookup hash
 
     def load(self, data):
         """
             data: dict
         """
+        if type(data) is not list:
+            raise InvalidDataException()
 
-        self._data = data
+        for el in data:
+            rid = el['id']
 
-        default_language = 'nb'  # @TODO
+            if isinstance(el, Resource):
+                instance = el
+            else:
+                if rid in self._term_from_id:
+                    raise InvalidDataException('The ID {} is defined more than once.'.format(rid))
+                if 'Collection' in el.get('type', []):
+                    instance = Collection().load(el)
+                elif 'Group' in el.get('type', []):
+                    instance = Group().load(el)
+                else:
+                    instance = Concept().load(el)
 
-        # Build lookup hashes:
-        for k, v in data.items():
-            if 'prefLabel' in v and default_language in v['prefLabel']:
-                self._ids[v['prefLabel'][default_language]['value']] = k
-                self._terms[k] = v['prefLabel'][default_language]['value']
-            elif 'component' in v:
-                term = self.string_separator.join(map(lambda x: data[x]['prefLabel'][default_language]['value'], v['component']))
-                self._ids[term] = k
-                self._terms[k] = term
+            self._resources.append(instance)
+            self._resource_from_id[rid] = instance
 
-    def uri(self, id):  # TODO: Move into Resource class
-        if self._uri_format is None:
-            raise Exception('URI format has not been set.')
-        return self._uri_format.format(id=id[4:])
+            for lang, label in instance.prefLabel.items():
+                array_set(self._id_from_term, text_type('{}.{}').format(label.value, lang), rid)
+                array_set(self._term_from_id, text_type('{}.{}').format(rid, lang), label.value)
+
+        for res in self._resources:
+            rid = res['id']
+            if 'component' in res:
+                components = [self.get(id=x) for x in res['component']]
+                languages = [set(x.prefLabel.keys()) for x in components]
+                # Reduce to languages shared by all components
+                languages = reduce(lambda x, y: x.intersection(y), languages)
+
+                for lang in languages:
+                    term = self.string_separator.join([x.get('prefLabel.{}'.format(lang)).value for x in components])
+                    array_set(self._id_from_term, text_type('{}.{}').format(term, lang), rid)
+                    array_set(self._term_from_id, text_type('{}.{}').format(rid, lang), term)
+
+        return self  # make chainable
+
+    def serialize(self):
+        return [x.serialize() for x in self._resources]
 
     def __iter__(self):
-        for c in self._data.values():
+        for c in self._resources:
             yield c
 
     def __len__(self):
-        return len(self._data)
+        return len(self._resources)
+
+    def __getitem__(self, key):
+        return self.get(id=key)
 
 
 class Concepts(Resources):

@@ -1,10 +1,12 @@
 # encoding=utf-8
+from __future__ import print_function
 import isodate
 import xmlwitch
 import codecs
 import os
 import re
 from ..models.resources import Concept
+from ..models.resources import Label
 
 
 class Roald2(object):
@@ -38,10 +40,10 @@ class Roald2(object):
         if len(resources) == 0:
             raise RuntimeError('Found no resources in {}'.format(path))
 
-        data = {c.get('id'): c.data for c in resources}
-        self.vocabulary.resources.load(data)
+        self.vocabulary.resources.load(resources)
 
     def read_file(self, filename, conceptType, language_code):
+        print(filename)
         concepts = []
         if not os.path.isfile(filename):
             return []
@@ -59,10 +61,10 @@ class Roald2(object):
             if value in self.elementSymbols:
                 concept.set('elementSymbol', value)
             else:
-                print 'Check:', value
+                print('Check:', value)
                 acronym_for = []
                 for lang, term in concept.get('prefLabel').items():
-                    words = re.split('[ -]+', term['value'])
+                    words = re.split('[ -]+', term.value)
                     x = 0
                     for n in range(len(words)):
                         # print n, words[n], value[x]
@@ -70,12 +72,12 @@ class Roald2(object):
                             # print ' <> Found'
                             x += 1
                             if x >= len(pvalue):
-                                print ' : matched prefLabel', term['value']
+                                print(' : matched prefLabel', term.value)
                                 acronym_for.append(term)
                                 break
                 for lang, terms in concept.get('altLabel', {}).items():
                     for term in terms:
-                        words = re.split('[ -]+', term['value'])
+                        words = re.split('[ -]+', term.value)
                         x = 0
                         for n in range(len(words)):
                             # print n, words[n], value[x]
@@ -83,7 +85,7 @@ class Roald2(object):
                                 # print ' <> Found'
                                 x += 1
                                 if x >= len(pvalue):
-                                    print ' : matched altLabel', term['value']
+                                    print(' : matched altLabel', term.value)
                                     acronym_for.append(term)
                                     break
                 if len(acronym_for) == 0:
@@ -91,9 +93,9 @@ class Roald2(object):
                     if len(prefLabels) == 1:
                         acronym_for.append(prefLabels[0])
                 for term in acronym_for:
-                    term['hasAcronym'] = value
+                    term.hasAcronym = value
                 if len(acronym_for) == 0:
-                    concept.add('altLabel.{key}'.format(key=language_code), {'value': value, 'acronymFor': '?'})
+                    concept.add('altLabel.{key}'.format(key=language_code), Label(value).set('acronymFor', '?'))
 
         for co in ['da', 'db', 'dz', 'dy', 'dx']:
             for c in components[co]:
@@ -103,7 +105,7 @@ class Roald2(object):
 
 
     def read_concept(self, data, conceptType, language_code):
-        concept = Concept(conceptType)
+        concept = Concept().set_type(conceptType)
         acronyms = []
         components = {'da': [], 'db': [], 'dx': [], 'dy': [], 'dz': []}
         lines = data.split('\n')
@@ -116,7 +118,7 @@ class Roald2(object):
                     yield self.add_acronyms_and_components(concept, acronyms, language_code, components)
                 acronyms = []
                 components = {'da': [], 'db': [], 'dx': [], 'dy': [], 'dz': []}
-                concept = Concept(conceptType)
+                concept = Concept().set_type(conceptType)
             else:
                 key, value = line
                 if key == 'id':
@@ -124,14 +126,14 @@ class Roald2(object):
                     # concept.set('uri', uri)
                     concept.set('id', value)
                 elif key == 'te':
-                    concept.set('prefLabel.{}'.format(language_code), {'value': value})
+                    concept.set('prefLabel.{}'.format(language_code), Label(value))
                 elif key == 'bf':
-                    concept.add('altLabel.{}'.format(language_code), {'value': value})
+                    concept.add('altLabel.{}'.format(language_code), Label(value))
                 elif key in ['en', 'nb', 'nn', 'la']:
                     if key not in concept.get('prefLabel'):
-                        concept.set('prefLabel.{key}'.format(key=key), {'value': value})
+                        concept.set('prefLabel.{key}'.format(key=key), Label(value))
                     else:
-                        concept.add('altLabel.{key}'.format(key=key), {'value': value})
+                        concept.add('altLabel.{key}'.format(key=key), Label(value))
 
                 elif key == 'ak':
                     acronyms.append(value)
@@ -173,7 +175,7 @@ class Roald2(object):
                         concept.set_type('VirtualCompoundHeading')
 
                 else:
-                    print 'Unknown key: {}'.format(key)
+                    print('Unknown key: {}'.format(key))
 
         if not concept.blank:
             yield self.add_acronyms_and_components(concept, acronyms, language_code, components)

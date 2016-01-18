@@ -9,11 +9,12 @@ from six import binary_type
 from datetime import datetime
 import logging
 
+from .adapter import Adapter
+
 try:
     from skosify import Skosify
 except:
-    print('Please install skosify first')
-    sys.exit(1)
+    raise RuntimeError('Please install skosify first')
 
 try:
     from io import BytesIO
@@ -34,7 +35,7 @@ SD = Namespace('http://www.w3.org/ns/sparql-service-description#')
 LOCAL = Namespace('http://data.ub.uio.no/onto#')
 
 
-class Skos(object):
+class Skos(Adapter):
     """
     Class for exporting data as SKOS
     """
@@ -55,7 +56,7 @@ class Skos(object):
         'include_narrower': False
     }
 
-    def __init__(self, vocabulary, include=None, mappings_from=None):
+    def __init__(self, vocabulary, include=None, mappings_from=None, add_same_as=None):
         """
             - vocabulary : Vocabulary object
             - include : List of files to include
@@ -71,11 +72,10 @@ class Skos(object):
             self.mappings_from = []
         else:
             self.mappings_from = mappings_from
-
-    def extFromFilename(self, fn):
-        if fn.endswith('.ttl'):
-            return 'turtle'
-        return 'xml'
+        if add_same_as is None:
+            self.add_same_as = []
+        else:
+            self.add_same_as = add_same_as
 
     def serialize(self):
 
@@ -99,15 +99,15 @@ class Skos(object):
 
         lg0 = len(graph)
         for resource in self.vocabulary.resources:
-            self.convert_resource(graph, resource, self.vocabulary.resources, scheme_uri, self.vocabulary.default_language.alpha2)
+            self.convert_resource(graph, resource, self.vocabulary.resources, scheme_uri, self.vocabulary.default_language.alpha2, self.add_same_as)
         logger.info(' - Added {} triples'.format(len(graph) - lg0))
 
         all_concepts = set([tr[0] for tr in graph.triples((None, RDF.type, SKOS.Concept))])
+        skosify = Skosify()
         for inc in self.mappings_from:
             lg0 = len(graph)
-            tmp = Graph()
-            tmp.load(inc, format=self.extFromFilename(inc))
-            for tr in tmp.triples_choices((None, [SKOS.exactMatch, SKOS.closeMatch, SKOS.broadMatch, SKOS.narrowMatch, SKOS.relatedMatch], None)):
+            mappings = self.load_mappings(inc)
+            for tr in mappings.triples((None, None, None)):
                 if tr[0] in all_concepts:
                     graph.add(tr)
             logger.info(' - Added {} mappings from {}'.format(len(graph) - lg0, inc))
@@ -141,7 +141,7 @@ class Skos(object):
                 out.append(y)
         return out
 
-    def convert_resource(self, graph, resource, resources, scheme_uri, default_language):
+    def convert_resource(self, graph, resource, resources, scheme_uri, default_language, add_same_as):
         uri = URIRef(self.vocabulary.uri(resource['id']))
 
         types = self.convert_types(resource.get('type', []))
@@ -157,21 +157,21 @@ class Skos(object):
             graph.add((uri, SKOS.inScheme, scheme_uri))
 
         for lang, term in resource.get('prefLabel', {}).items():
-            graph.add((uri, SKOS.prefLabel, Literal(term['value'], lang=lang)))
+            graph.add((uri, SKOS.prefLabel, Literal(term.value, lang=lang)))
 
-            if term.get('hasAcronym'):
+            if term.hasAcronym:
                 # @TODO Temporary while thinking...
                 # graph.add((uri, LOCAL.acronym, Literal(term['hasAcronym'], lang=lang)))
-                graph.add((uri, SKOS.altLabel, Literal(term['hasAcronym'], lang=lang)))
+                graph.add((uri, SKOS.altLabel, Literal(term.hasAcronym, lang=lang)))
 
         for lang, terms in resource.get('altLabel', {}).items():
             for term in terms:
-                graph.add((uri, SKOS.altLabel, Literal(term['value'], lang=lang)))
+                graph.add((uri, SKOS.altLabel, Literal(term.value, lang=lang)))
 
-                if term.get('hasAcronym'):
+                if term.hasAcronym:
                     # @TODO Temporary while thinking...
                     # graph.add((uri, LOCAL.acronym, Literal(term['hasAcronym'], lang=lang)))
-                    graph.add((uri, SKOS.altLabel, Literal(term['hasAcronym'], lang=lang)))
+                    graph.add((uri, SKOS.altLabel, Literal(term.hasAcronym, lang=lang)))
 
         for lang, value in resource.get('definition', {}).items():
             graph.add((uri, SKOS.definition, Literal(value, lang=lang)))
@@ -185,6 +185,9 @@ class Skos(object):
 
         for value in resource.get('acronym', []):
             graph.add((uri, LOCAL.acronym, Literal(value)))
+
+        for value in resource.get('notation', []):
+            graph.add((uri, SKOS.notation, Literal(value)))
 
         x = resource.get('created')
         if x is not None:
@@ -232,7 +235,7 @@ class Skos(object):
 
             # @TODO: Generalize
             for lang in ['nb']:
-                labels = [c['prefLabel'][lang]['value'] for c in components if c['prefLabel'].get(lang)]
+                labels = [c.prefLabel[lang].value for c in components if c['prefLabel'].get(lang)]
                 if len(labels) == len(components):
                     streng = resources.string_separator.join(labels)
                     graph.add((uri, SKOS.prefLabel, Literal(streng, lang=lang)))
@@ -255,6 +258,9 @@ class Skos(object):
 
             graph.add((b1, RDF.rest, RDF.nil))
             # graph.add((uri, SKOS.broader, component))
+
+        for same_as in add_same_as:
+            graph.add((uri, OWL.sameAs, URIRef(same_as.format(id=resource['id']))))
 
     def skosify_process(self, graph):
 
@@ -291,8 +297,10 @@ class Skos(object):
         # logging.info("Phase 5: Performing SKOS enrichments")
 
         # Enrichments: broader <-> narrower, related <-> related
-        # skosify.enrich_relations(graph, options.enrich_mappings,
-        #                  options.narrower, options.transitive)
+        # skosify.enrich_relations(graph,
+        #                          enrich_mappings=True,
+        #                          use_narrower=False,
+        #                          transitive=False)
 
         # logging.info("Phase 6: Cleaning up")
 

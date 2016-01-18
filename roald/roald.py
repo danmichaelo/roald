@@ -76,7 +76,7 @@ class Roald(object):
             raise Exception('Unknown format')
 
         filename = os.path.expanduser(filename)
-        with open(filename, 'w') as f:
+        with open(filename, 'wb') as f:
             f.write(model.serialize())
         logger.info('Export to {} complete'.format(filename))
 

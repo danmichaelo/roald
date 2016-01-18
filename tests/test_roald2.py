@@ -2,7 +2,6 @@
 from __future__ import print_function
 import unittest
 from lxml import etree
-from StringIO import StringIO
 import pytest
 
 from roald.adapters.roald2 import Roald2
@@ -29,5 +28,5 @@ class TestConverter(unittest.TestCase):
         self.assertEqual(1, len(concepts))
         self.assertEqual(set(['GenreForm']), set(concepts[0].get('type')))
         self.assertEqual('REAL030070', concepts[0].get('id'))
-        self.assertEqual('Atlas', concepts[0]['prefLabel']['sv']['value'])
-        self.assertEqual('Verdensatlas', concepts[0]['altLabel']['sv'][0]['value'])
+        self.assertEqual('Atlas', concepts[0]['prefLabel']['sv'].value)
+        self.assertEqual('Verdensatlas', concepts[0]['altLabel']['sv'][0].value)
