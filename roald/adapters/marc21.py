@@ -211,6 +211,11 @@ class Marc21(Adapter):
                 #     with builder.datafield(tag='083', ind1='0', ind2=' '):
                 #         builder.subfield(value, code='a')
 
+                # 083 DDC number
+                for value in resource.get('notation', []):
+                    with builder.datafield(tag='083', ind1='0', ind2=' '):
+                        builder.subfield(value, code='a')
+
                 for tr in mappings.triples((URIRef(uri), None, None)):
                     m = ddc_matcher.match(tr[2])
                     if m:
