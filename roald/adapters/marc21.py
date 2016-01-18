@@ -82,7 +82,16 @@ class Marc21(object):
                 # No special indication possible?
                 # https://github.com/realfagstermer/roald/issues/8
 
-    def convert_resource(self, builder, resource, resources):
+    def tag_from_type(base, res_type):
+        vals = {
+            'Temporal': 48,
+            'Topic': 50,
+            'Geographic': 51,
+            'GenreForm': 55,
+        }
+        return ''.format(base + vals[res_type])
+
+    def convert_resource(self, builder, resource, resources, mappings):
 
         if resource.get('created'):
             created = isodate.parse_datetime(resource.get('created'))
@@ -288,5 +297,10 @@ class Marc21(object):
 
                 # 680 Notes
                 for value in resource.get('note', []):
+                    with builder.datafield(tag='680', ind1=' ', ind2=' '):
+                        builder.subfield(value, code='i')
+
+                # 680 Notes (Definition)
+                for value in resource.get('definition', []):
                     with builder.datafield(tag='680', ind1=' ', ind2=' '):
                         builder.subfield(value, code='i')
