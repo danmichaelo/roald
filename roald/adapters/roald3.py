@@ -33,4 +33,4 @@ class Roald3(object):
         }
 
         with codecs.open(filename, 'w', 'utf-8') as stream:
-            json.dump(data, stream, indent=2)
+            json.dump(data, stream, indent=2, sort_keys=True)
