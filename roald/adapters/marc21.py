@@ -230,11 +230,11 @@ class Marc21(Adapter):
 
                 for ma in sorted(cmappings, key=lambda k: '{},{},{}'.format(k['relation'], k['table'], k['number'])):
                     with builder.datafield(tag='083', ind1='0', ind2=' '):
+                        if ma['table'] != '':
+                            builder.subfield(ma['table'], code='z')
                         builder.subfield(ma['number'], code='a')
                         builder.subfield(ma['relation'], code='c')
                         builder.subfield('23', code='2')
-                        if ma['table'] != '':
-                            builder.subfield(ma['table'], code='z')
 
                 # 148/150/151/155 Authorized heading
                 if resourceType == 'CompoundHeading':
