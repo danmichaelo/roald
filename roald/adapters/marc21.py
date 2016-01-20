@@ -116,15 +116,24 @@ class Marc21(Adapter):
 
     def convert_resource(self, builder, resource, resources, mappings):
 
+        created = None
+        modified = None
+
         if resource.get('created'):
             created = isodate.parse_datetime(resource.get('created'))
-        else:
-            # Tja... Mrtermer har ingen datoer(!)
-            created = isodate.isodatetime.datetime.now()  # isodate.isodatetime.datetime(2010, 1, 1)
 
         if resource.get('modified'):
             modified = isodate.parse_datetime(resource.get('modified'))
-        else:
+
+        if created is None and modified is None:
+            # Mrtermer har ingen datoer(!)
+            created = isodate.isodatetime.datetime(2010, 1, 1)
+            modified = isodate.isodatetime.datetime(2010, 1, 1)
+            # or… isodate.isodatetime.datetime.now()
+        elif created is None:
+            created = modified
+
+        elif modified is None:
             modified = created
 
         uri = self.vocabulary.uri(resource.get('id'))
@@ -169,7 +178,7 @@ class Marc21(Adapter):
                 builder.controlfield(modified.strftime('%Y%m%d%H%M%S.0'), tag='005')
 
                 # 008 General Information / Informasjonskoder
-                field008 = '{created}|||anz|naabn          |a|ana|||| d'.format(created.strftime('%y%m%d'))
+                field008 = '{created}|||anz|naabn          |a|ana|||| d'.format(created=created.strftime('%y%m%d'))
                 builder.controlfield(field008, tag='008')
 
                 # 024 Other Standard Identifier
