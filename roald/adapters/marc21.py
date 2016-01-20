@@ -143,9 +143,9 @@ class Marc21(Adapter):
             if resourceType == 'VirtualCompoundHeading':
                 continue
 
-            if resourceType == 'KnuteTerm':
-                # @TODO: Not sure how to handle these
-                continue
+            # if resourceType == 'KnuteTerm':
+            #     # @TODO: Not sure how to handle these
+            #     continue
 
             if resourceType == 'Collection':
                 # @TODO: Not sure how to handle these
