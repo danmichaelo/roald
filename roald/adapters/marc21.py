@@ -128,7 +128,7 @@ class Marc21(Adapter):
             modified = created
 
         uri = self.vocabulary.uri(resource.get('id'))
-        ddc_matcher = re.compile(r'http://data.ub.uio.no/ddc/([T0-9.-]+)')
+        ddc_matcher = re.compile(r'http://data.ub.uio.no/ddc/(T([1-9])--)?([0-9.]+)')
         mappingRelationsRepr = {
             SKOS.exactMatch: '=EQ',
             SKOS.closeMatch: '~EQ',
@@ -169,7 +169,7 @@ class Marc21(Adapter):
                 builder.controlfield(modified.strftime('%Y%m%d%H%M%S.0'), tag='005')
 
                 # 008 General Information / Informasjonskoder
-                field008 = '{created}|||anz|naabn          |a|ana|||| d'.format(created=created.strftime('%y%m%d'))
+                field008 = '{created}|||anz|naabn          |a|ana|||| d'.format(created.strftime('%y%m%d'))
                 builder.controlfield(field008, tag='008')
 
                 # 024 Other Standard Identifier
@@ -216,16 +216,25 @@ class Marc21(Adapter):
                     with builder.datafield(tag='083', ind1='0', ind2=' '):
                         builder.subfield(value, code='a')
 
+                cmappings = []
                 for tr in mappings.triples((URIRef(uri), None, None)):
                     m = ddc_matcher.match(tr[2])
                     if m:
                         self.nmappings += 1
-                        ddc_number = m.group(1).replace('T', 'H')
-                        # logger.info('Add mapping to %s', m.group(1))
-                        with builder.datafield(tag='083', ind1='0', ind2=' '):
-                            builder.subfield(ddc_number, code='a')
-                            builder.subfield(mappingRelationsRepr[tr[1]], code='c')
-                            builder.subfield('23', code='2')
+                        ma = {'number': m.group(3), 'relation': mappingRelationsRepr[tr[1]]}
+                        if m.group(2) is not None:
+                            ma['table'] = m.group(2)
+                        else:
+                            ma['table'] = ''
+                        cmappings.append(ma)
+
+                for ma in sorted(cmappings, key=lambda k: '{},{},{}'.format(k['relation'], k['table'], k['number'])):
+                    with builder.datafield(tag='083', ind1='0', ind2=' '):
+                        builder.subfield(ma['number'], code='a')
+                        builder.subfield(ma['relation'], code='c')
+                        builder.subfield('23', code='2')
+                        if ma['table'] != '':
+                            builder.subfield(ma['table'], code='z')
 
                 # 148/150/151/155 Authorized heading
                 if resourceType == 'CompoundHeading':
