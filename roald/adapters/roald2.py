@@ -143,6 +143,9 @@ class Roald2(object):
                 elif key == 'dw':
                     concept.add('ddc', value)
 
+                elif key == 'fly':
+                    # uri = 'http://data.ub.uio.no/realfagstermer/{}'.format(value)
+                    concept.add('replacedBy', value)
                 elif key == 'so':
                     # uri = 'http://data.ub.uio.no/realfagstermer/{}'.format(value)
                     concept.add('related', value)
@@ -162,6 +165,8 @@ class Roald2(object):
                     concept.set('created', value)
                 elif key == 'tie':
                     concept.set('modified', value)
+                elif key == 'tis':
+                    concept.set('deprecated', value)
                 elif key == 'ba':
                     pass  # ignore, ignore for now
 

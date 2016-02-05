@@ -197,6 +197,11 @@ class Skos(Adapter):
         if x is not None:
             graph.add((uri, DCTERMS.modified, Literal(x, datatype=XSD.dateTime)))
 
+        x = resource.get('deprecated')
+        if x is not None:
+            graph.add((uri, OWL.deprecated, Literal(True)))
+            graph.add((uri, SKOS.historyNote, Literal('Deprecated on {}'.format(x))))
+
         x = resource.get('elementSymbol')
         if x is not None:
             graph.add((uri, LOCAL.elementSymbol, Literal(x)))
@@ -213,6 +218,11 @@ class Skos(Adapter):
             rel_uri = URIRef(self.vocabulary.uri(c['id']))
 
             graph.add((uri, SKOS.related, rel_uri))
+
+        replacedBy = [resources.get(id=value) for value in resource.get('replacedBy', [])]
+        for c in replacedBy:
+            rel_uri = URIRef(self.vocabulary.uri(c['id']))
+            graph.add((uri, DCTERMS.replacedBy, rel_uri))
 
         for res_id in resource.get('member', []):
             graph.add((uri, SKOS.member, URIRef(self.vocabulary.uri(res_id))))

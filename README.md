@@ -149,12 +149,15 @@ Egenskap        | Type        | Meta?  | Beskrivelse
 `component`     | array       |        | (kun for strenger) : Liste av ID-er for streng-komponentene
 `related`       | array       |        | Liste av ID-er for begrep
 `broader`       | array       |        | Liste av ID-er for begrep
+`replacedBy`    | array       |        | Liste av ID-er for begrep (må brukes sammen med `deprecated`)
 `elementSymbol` | string      |        | Kjemisk symbol
 `isTopTerm`     | boolean     |        | (for Humord)
 `created`       | datetime    | meta   | Dato for opprettelse (påkrevd)
 `createdBy`     | string      | meta   | (for fremtidig bruk)
 `modified`      | datetime    | meta   | Dato for siste endring (påkrevd)
 `modifiedBy`    | string      | meta   | (for fremtidig bruk)
+`deprecated`    | datetime    | meta   | Dato for fjerning
+`deprecatedBy`  | string      | meta   | (for fremtidig bruk)
 `version`       | int         | meta   | (for fremtidig bruk)
 
 (Egenskapene merket med "meta" er egenskaper som kanskje må skilles ut i

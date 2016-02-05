@@ -51,11 +51,17 @@ class Marc21(Adapter):
             self.load_mappings(inc, mappings)
             #logger.info(' - Loaded {} (two-way) mappings from {}'.format(len(mappings), inc))
 
-        # Make a dictionary of narrower resources for fast lookup
+        # Make a dictionary of 'narrower' (reverse 'broader') for fast lookup
         self.narrower = {}
         for c in self.vocabulary.resources:
             for x in c.get('broader', []):
                 self.narrower[x] = self.narrower.get(x, []) + [c['id']]
+
+        # Make a dictionary of 'replaces' (inverse 'replacedBy') for fast lookup
+        self.replaces = {}
+        for c in self.vocabulary.resources:
+            for x in c.get('replacedBy', []):
+                self.replaces[x] = self.replaces.get(x, []) + [c['id']]
 
         builder = xmlwitch.Builder(version='1.0', encoding='utf-8')
 
@@ -164,7 +170,17 @@ class Marc21(Adapter):
 
                 # Fixed leader for all records
                 # Ref: <http://www.loc.gov/marc/uma/pt8-11.html#pt8>
-                leader = '00000nz  a2200000n  4500'
+                record_status = 'n'
+
+                x = resource.get('replacedBy', [])
+                if len(x) > 1:
+                    record_status = 's'
+                elif len(x) == 1:
+                    record_status = 'x'
+                elif resource.get('deprecated') is not None:
+                    record_status = 'd'
+
+                leader = '00000{}z  a2200000n  4500'.format(record_status)
                 builder.leader(leader)
 
                 # 001 Control number
@@ -334,6 +350,12 @@ class Marc21(Adapter):
                     with builder.datafield(tag=tags[rel_type], ind1=' ', ind2=' '):
                         builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
                         builder.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
+                        builder.subfield(self.global_cn(value), code='0')
+
+                for value in self.replaces.get(resource['id'], []):
+                    rel = resources.get(id=value)
+                    with builder.datafield(tag=self.tag_from_type(400, rel['type'][0]), ind1=' ', ind2=' '):
+                        builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
                         builder.subfield(self.global_cn(value), code='0')
 
                 for value in resource.get('related', []):
