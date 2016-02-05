@@ -323,7 +323,7 @@ class Marc21(Adapter):
                     if rel_type in tags:
                         with builder.datafield(tag=tags[rel_type], ind1=' ', ind2=' '):
                             builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
-                            builder.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
+                            builder.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
                             builder.subfield(self.global_cn(value), code='0')
                     else:
                         logger.warn('Cannot serialize "%s" <broader> "%s", because the latter has a unknown type.', value, rel['id'])
@@ -333,7 +333,7 @@ class Marc21(Adapter):
                     rel_type = rel['type'][0]
                     with builder.datafield(tag=tags[rel_type], ind1=' ', ind2=' '):
                         builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
-                        builder.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
+                        builder.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
                         builder.subfield(self.global_cn(value), code='0')
 
                 for value in resource.get('related', []):
