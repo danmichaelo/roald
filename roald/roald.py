@@ -33,7 +33,7 @@ class Roald(object):
         self.vocabulary = Vocabulary()
         self.default_language = None
 
-    def load(self, filename, format='roald3', language=None):
+    def load(self, filename, format='roald3', language=None, **kwargs):
         """
             - filename : the filename to a 'roald3' file or path to a 'roald2' directory.
             - format : 'roald3', 'roald2' or 'bibsys'.
@@ -49,7 +49,7 @@ class Roald(object):
             Roald2(self.vocabulary).load(filename)
         elif format == 'bibsys':
             self.vocabulary.default_language = languages.get(alpha2=language)
-            Bibsys(self.vocabulary).load(filename)
+            Bibsys(self.vocabulary).load(filename, **kwargs)
         else:
             raise ValueError('Unknown format')
 

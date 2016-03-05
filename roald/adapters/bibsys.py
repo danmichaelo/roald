@@ -23,8 +23,9 @@ class Bibsys(object):
         super(Bibsys, self).__init__()
         self.vocabulary = vocabulary
 
-    def load(self, filename):
+    def load(self, filename, exclude_underemne=False):
         language = self.vocabulary.default_language.alpha2
+        self.exclude_underemne = exclude_underemne
         resources = []
         ids = {}  # index lookup hash
         parents = {}
@@ -51,8 +52,9 @@ class Bibsys(object):
         kv = record.find('kvalifikator')
         if kv is not None:
             label = u'{} ({})'.format(label, kv.text)
-        for uf in record.findall('underemnefrase'):
-            label = u'{} : {}'.format(label, uf.text)
+        if not self.exclude_underemne:
+            for uf in record.findall('underemnefrase'):
+                label = u'{} - {}'.format(label, uf.text)
         for node in record.findall('kjede'):
             label = u'{} : {}'.format(label, node.text)
         return label
