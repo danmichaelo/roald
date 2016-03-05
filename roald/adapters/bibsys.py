@@ -53,6 +53,8 @@ class Bibsys(object):
             label = u'{} ({})'.format(label, kv.text)
         for uf in record.findall('underemnefrase'):
             label = u'{} : {}'.format(label, uf.text)
+        for node in record.findall('kjede'):
+            label = u'{} : {}'.format(label, node.text)
         return label
 
     def process_record(self, record, language, parents):
