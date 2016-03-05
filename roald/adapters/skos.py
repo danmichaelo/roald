@@ -222,7 +222,7 @@ class Skos(Adapter):
         replacedBy = [resources.get(id=value) for value in resource.get('replacedBy', [])]
         for c in replacedBy:
             rel_uri = URIRef(self.vocabulary.uri(c['id']))
-            graph.add((uri, DCTERMS.replacedBy, rel_uri))
+            graph.add((uri, DCTERMS.isReplacedBy, rel_uri))
 
         for res_id in resource.get('member', []):
             graph.add((uri, SKOS.member, URIRef(self.vocabulary.uri(res_id))))
