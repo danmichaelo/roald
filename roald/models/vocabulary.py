@@ -1,5 +1,6 @@
 from iso639 import languages
 import json
+import re
 from .resources import Resources
 # from .collections import Collections
 
@@ -34,4 +35,5 @@ class Vocabulary(object):
     def uri(self, id):  # TODO: Move into Concept/Collection class
         if self._uri_format is None:
             raise Exception('URI format has not been set.')
-        return self._uri_format.format(id=id[4:])
+        return self._uri_format.format(id=re.sub('[^0-9]', '', id))
+        # Removes the REAL, HUME, SMR prefixes. @TODO: Should probably rather remove these during import.
