@@ -1,4 +1,5 @@
 import json
+import re
 import codecs
 from iso639 import languages
 
@@ -8,6 +9,10 @@ class Roald3(object):
     def __init__(self, vocabulary):
         super(Roald3, self).__init__()
         self.vocabulary = vocabulary
+
+    def normalize_line_endings(self, txt):
+        # Normalize to unix line endings
+        return txt.replace('\r\n','\n').replace('\r','\n')
 
     def load(self, filename):
         data = json.load(codecs.open(filename, 'r', 'utf-8'))
@@ -32,5 +37,13 @@ class Roald3(object):
             'resources': self.vocabulary.resources.serialize()
         }
 
-        with codecs.open(filename, 'w', 'utf-8') as stream:
-            json.dump(data, stream, indent=2, sort_keys=True)
+        jsondump = json.dumps(data, indent=2, sort_keys=True)
+
+        # Remove trailling spaces (https://bugs.python.org/issue16333)
+        jsondump = re.sub('\s+$', '', jsondump, flags=re.MULTILINE)
+
+        # Normalize to unix line endings
+        jsondump = self.normalize_line_endings(jsondump)
+
+        with open(filename, 'wb') as stream:
+            stream.write(jsondump.encode('utf-8'))
