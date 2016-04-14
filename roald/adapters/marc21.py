@@ -122,6 +122,7 @@ class Marc21(Adapter):
 
     def convert_resource(self, builder, resource, resources, mappings):
 
+
         created = None
         modified = None
 
@@ -144,6 +145,7 @@ class Marc21(Adapter):
 
         uri = self.vocabulary.uri(resource.get('id'))
         ddc_matcher = re.compile(r'http://data.ub.uio.no/ddc/(T([1-9])--)?([0-9.]+)')
+        vocab_matcher = re.compile(r'http://data.ub.uio.no/([a-z]+)/c([0-9]+)')
         mappingRelationsRepr = {
             SKOS.exactMatch: '=EQ',
             SKOS.closeMatch: '~EQ',
@@ -242,8 +244,10 @@ class Marc21(Adapter):
                         builder.subfield(value, code='a')
 
                 cmappings = []
+                omappings = []
                 for tr in mappings.triples((URIRef(uri), None, None)):
                     m = ddc_matcher.match(tr[2])
+                    m2 = vocab_matcher.match(tr[2])
                     if m:
                         self.nmappings += 1
                         ma = {'number': m.group(3), 'relation': mappingRelationsRepr[tr[1]]}
@@ -252,6 +256,11 @@ class Marc21(Adapter):
                         else:
                             ma['table'] = ''
                         cmappings.append(ma)
+                    elif m2:
+                        vocab = {'humord': 'humord', 'realfagstermer': 'noubomn'}.get(m2.group(1))
+                        if vocab:
+                            cid = {'humord': 'HUME', 'realfagstermer': 'REAL'}.get(m2.group(1)) + m2.group(2)
+                            omappings.append({'vocab': vocab, 'id': cid, 'relation': mappingRelationsRepr[tr[1]]})
 
                 for ma in sorted(cmappings, key=lambda k: '{},{},{}'.format(k['relation'], k['table'], k['number'])):
                     with builder.datafield(tag='083', ind1='0', ind2=' '):
@@ -375,3 +384,12 @@ class Marc21(Adapter):
                 for value in resource.get('definition', []):
                     with builder.datafield(tag='680', ind1=' ', ind2=' '):
                         builder.subfield(value, code='i')
+
+                # 7XX Heading Linking Entries-General Information
+                for ma in sorted(omappings, key=lambda k: '{},{}'.format(k['vocab'], k['id'])):
+                    # @TODO: Does choice of 748/750/751/755 depend on source or target concept?
+                    with builder.datafield(tag='750', ind1=' ', ind2='7'):
+                        # builder.subfield('???', code='a')
+                        builder.subfield(ma['id'], code='0')
+                        builder.subfield(ma['vocab'], code='2')
+                        builder.subfield(ma['relation'], code='4')
