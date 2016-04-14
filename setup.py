@@ -14,9 +14,17 @@ setup(name='roald',
       url='https://github.com/scriptotek/roald',
       license='MIT',
       packages=['roald', 'roald.models', 'roald.adapters'],
-      install_requires=['xmlwitch>=1.0.0', 'isodate', 'lxml', 'rdflib', 'iso-639', 'otsrdflib', 'six', 'skosify'],
+      install_requires=['xmlwitch==0.3.0',  # Note: we need to use the danmichaelo fork, since I haven't been able to get it merged (or get any response from the original author at all).
+                        'isodate',
+                        'lxml',
+                        'rdflib',
+                        'iso-639',
+                        'otsrdflib',
+                        'six',
+                        'skosify',  # While waiting for a new release, we need to use master
+                        ],
       dependency_links=[
-        'https://github.com/danmichaelo/xmlwitch/tarball/master#egg=xmlwitch-1.0.2.dev1',
+        'https://github.com/danmichaelo/xmlwitch/tarball/0.3.0#egg=xmlwitch-0.3.0',
         'https://github.com/NatLibFi/Skosify/tarball/master#egg=skosify-1.0.2.dev1'
       ],
       classifiers=[

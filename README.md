@@ -2,12 +2,17 @@ Roald III backend - en begynnelse
 ---------------------------------
 
 Python-pakke som foreløpig tar seg av konvertering av data. Pakken
-importerer data (fra Roald 2) og eksporterer (som MARC21XML og RDF/SKOS)
+importerer data (fra Roald 2 og Bibsys) og eksporterer (som MARC21XML og RDF/SKOS).
+
+For å installere:
+
+``` {.bash}
+pip install -U --process-dependency-links -e .
+```
 
 For å kjøre tester:
 
 ``` {.bash}
-pip install -e .
 py.test
 ```
 
@@ -23,6 +28,9 @@ Eksempler
 ---------
 
 #### Fra Roald 2 til Roald 3, MARC21 og RDF/SKOS
+
+(Se `dodo.py` i [realfagstermer-repoet](https://github.com/realfagstermer/realfagstermer)
+for en faktisk implementasjon.)
 
 For å importere Roald 2-data, lagre Roald 3-data (JSON) og eksportere
 som MARC21XML og RDF/SKOS:
