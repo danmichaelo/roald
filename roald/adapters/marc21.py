@@ -270,7 +270,7 @@ class Marc21(Adapter):
                     elif m2:
                         vocab = {'humord': 'humord', 'realfagstermer': 'noubomn'}.get(m2.group(1))
                         if vocab and mappingRelationsRepr.get(tr[1]):
-                            cid = {'humord': 'HUME', 'realfagstermer': 'REAL'}.get(m2.group(1)) + m2.group(2)
+                            cid = {'humord': '(No-TrBIB)HUME', 'realfagstermer': '(NoOU)REAL'}.get(m2.group(1)) + m2.group(2)
                             omappings.append({'vocab': vocab, 'id': cid, 'relation': mappingRelationsRepr[tr[1]]})
 
                 for ma in sorted(cmappings, key=lambda k: '{},{},{}'.format(k['relation'], k['table'], k['number'])):
