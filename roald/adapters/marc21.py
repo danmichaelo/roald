@@ -8,6 +8,10 @@ from rdflib import URIRef
 from rdflib.graph import Graph, Literal
 from rdflib.namespace import SKOS
 import re
+try:
+    from skosify import Skosify
+except:
+    raise RuntimeError('Please install skosify first')
 
 from .adapter import Adapter
 
@@ -50,6 +54,12 @@ class Marc21(Adapter):
         for inc in self.mappings_from:
             self.load_mappings(inc, mappings)
             #logger.info(' - Loaded {} (two-way) mappings from {}'.format(len(mappings), inc))
+
+        skosify = Skosify()
+        skosify.enrich_relations(mappings,
+                                 enrich_mappings=True,
+                                 use_narrower=False,
+                                 use_transitive=False)
 
         # Make a dictionary of 'narrower' (reverse 'broader') for fast lookup
         self.narrower = {}
@@ -249,16 +259,17 @@ class Marc21(Adapter):
                     m = ddc_matcher.match(tr[2])
                     m2 = vocab_matcher.match(tr[2])
                     if m:
-                        self.nmappings += 1
-                        ma = {'number': m.group(3), 'relation': mappingRelationsRepr[tr[1]]}
-                        if m.group(2) is not None:
-                            ma['table'] = m.group(2)
-                        else:
-                            ma['table'] = ''
-                        cmappings.append(ma)
+                        ma = {'number': m.group(3), 'relation': mappingRelationsRepr.get(tr[1])}
+                        if ma['relation'] is not None:
+                            self.nmappings += 1
+                            if m.group(2) is not None:
+                                ma['table'] = m.group(2)
+                            else:
+                                ma['table'] = ''
+                            cmappings.append(ma)
                     elif m2:
                         vocab = {'humord': 'humord', 'realfagstermer': 'noubomn'}.get(m2.group(1))
-                        if vocab:
+                        if vocab and mappingRelationsRepr.get(tr[1]):
                             cid = {'humord': 'HUME', 'realfagstermer': 'REAL'}.get(m2.group(1)) + m2.group(2)
                             omappings.append({'vocab': vocab, 'id': cid, 'relation': mappingRelationsRepr[tr[1]]})
 
