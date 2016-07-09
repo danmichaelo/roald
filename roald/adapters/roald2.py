@@ -61,41 +61,44 @@ class Roald2(object):
             if value in self.elementSymbols:
                 concept.set('elementSymbol', value)
             else:
-                print('Check:', value)
-                acronym_for = []
-                for lang, term in concept.get('prefLabel').items():
-                    words = re.split('[ -]+', term.value)
-                    x = 0
-                    for n in range(len(words)):
-                        # print n, words[n], value[x]
-                        if words[n][0].lower() == pvalue[x].lower():
-                            # print ' <> Found'
-                            x += 1
-                            if x >= len(pvalue):
-                                print(' : matched prefLabel', term.value)
-                                acronym_for.append(term)
-                                break
-                for lang, terms in concept.get('altLabel', {}).items():
-                    for term in terms:
-                        words = re.split('[ -]+', term.value)
-                        x = 0
-                        for n in range(len(words)):
-                            # print n, words[n], value[x]
-                            if words[n][0].lower() == pvalue[x].lower():
-                                # print ' <> Found'
-                                x += 1
-                                if x >= len(pvalue):
-                                    print(' : matched altLabel', term.value)
-                                    acronym_for.append(term)
-                                    break
-                if len(acronym_for) == 0:
-                    prefLabels = [term for lang, term in concept.get('prefLabel').items()]
-                    if len(prefLabels) == 1:
-                        acronym_for.append(prefLabels[0])
-                for term in acronym_for:
-                    term.hasAcronym = value
-                if len(acronym_for) == 0:
-                    concept.add('altLabel.{key}'.format(key=language_code), Label(value).set('acronymFor', '?'))
+                prefLabel = concept.get('prefLabel.{}'.format(language_code))
+                if prefLabel is None or prefLabel.value != value:
+                    concept.add('altLabel.{key}'.format(key=language_code), Label(value))
+                # print('Check:', value)
+                # acronym_for = []
+                # for lang, term in concept.get('prefLabel').items():
+                #     words = re.split('[ -]+', term.value)
+                #     x = 0
+                #     for n in range(len(words)):
+                #         # print n, words[n], value[x]
+                #         if words[n][0].lower() == pvalue[x].lower():
+                #             # print ' <> Found'
+                #             x += 1
+                #             if x >= len(pvalue):
+                #                 print(' : matched prefLabel', term.value)
+                #                 acronym_for.append(term)
+                #                 break
+                # for lang, terms in concept.get('altLabel', {}).items():
+                #     for term in terms:
+                #         words = re.split('[ -]+', term.value)
+                #         x = 0
+                #         for n in range(len(words)):
+                #             # print n, words[n], value[x]
+                #             if words[n][0].lower() == pvalue[x].lower():
+                #                 # print ' <> Found'
+                #                 x += 1
+                #                 if x >= len(pvalue):
+                #                     print(' : matched altLabel', term.value)
+                #                     acronym_for.append(term)
+                #                     break
+                # if len(acronym_for) == 0:
+                #     prefLabels = [term for lang, term in concept.get('prefLabel').items()]
+                #     if len(prefLabels) == 1:
+                #         acronym_for.append(prefLabels[0])
+                # for term in acronym_for:
+                #     term.hasAcronym = value
+                # if len(acronym_for) == 0:
+                #     concept.add('altLabel.{key}'.format(key=language_code), Label(value).set('acronymFor', '?'))
 
         for co in ['da', 'db', 'dz', 'dy', 'dx']:
             for c in components[co]:
