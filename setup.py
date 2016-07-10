@@ -7,7 +7,7 @@ except ImportError:
     from distutils.core import setup
 
 setup(name='roald',
-      version='0.1.dev0',
+      version='0.1.dev1',
       description='Roald III indexing tool',
       author='Dan Michael Heggø',
       author_email='danmichaelo@gmail.com',

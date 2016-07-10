@@ -125,6 +125,7 @@ class Skos(Adapter):
                                  SD.Dataset,
                                  SD.Graph,
                                  SD.NamedGraph,
+                                 OWL.Ontology,
                                  OWL.Class,
                                  OWL.DatatypeProperty,
                                  SKOS.Collection,
