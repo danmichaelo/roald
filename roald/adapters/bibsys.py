@@ -124,7 +124,9 @@ class Bibsys(object):
         # if parents.get(tid) is None:
         #     logger.warn('No parents for %s', tid)
         for parent_id in parents.get(tid, []):
-            if isinstance(resources[ids[parent_id]], Concept):
+            if parent_id not in ids:
+                logger.warn('The parent ID %s of %s is not a Concept or a Collection', parent_id, tid)
+            elif isinstance(resources[ids[parent_id]], Concept):
                 out.append(resources[ids[parent_id]])
             else:
                 x = self.get_parents(parents, resources, ids, parent_id)
@@ -163,11 +165,14 @@ class Bibsys(object):
 
         # Add facet relations
         for node in record.findall('overordnetterm-id') + record.findall('ox-id'):
-            broader = resources[ids[node.text]]
-            if isinstance(broader, Collection):
-                broader.add('member', resource['id'])
-            if isinstance(broader, Concept) and isinstance(resource, Collection):
-                resource.add('superOrdinate', broader['id'])
+            if node.text not in ids:
+                logger.warn('Parent %s not a Concpet or Collection', node.text)
+            else:
+                broader = resources[ids[node.text]]
+                if isinstance(broader, Collection):
+                    broader.add('member', resource['id'])
+                if isinstance(broader, Concept) and isinstance(resource, Collection):
+                    resource.add('superOrdinate', broader['id'])
 
         # if isinstance(resource, Concept):
         #     parents_transitive = self.get_parents_transitive(parents, tid, [])
