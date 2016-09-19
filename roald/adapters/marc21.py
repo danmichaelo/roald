@@ -154,7 +154,7 @@ class Marc21(Adapter):
             modified = created
 
         uri = self.vocabulary.uri(resource.get('id'))
-        ddc_matcher = re.compile(r'http://data.ub.uio.no/ddc/(T([1-9])--)?([0-9.]+)')
+        ddc_matcher = re.compile(r'http://data.ub.uio.no/ddc/(([1-9])--)?([0-9.]+)')
         vocab_matcher = re.compile(r'http://data.ub.uio.no/([a-z]+)/c([0-9]+)')
         mappingRelationsRepr = {
             SKOS.exactMatch: '=EQ',
