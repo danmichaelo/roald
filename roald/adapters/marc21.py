@@ -284,36 +284,48 @@ class Marc21(Adapter):
                 # 148/150/151/155 Authorized heading
                 if resourceType == 'CompoundHeading':
 
-                    # Determine tag number based on the first component:
-                    rel = resources.get(id=resource.get('component')[0])
-                    tag = {
-                        'Temporal': '148',
-                        'Topic': '150',
-                        'Geographic': '151',
-                        'GenreForm': '155',
-                    }[rel['type'][0]]
+                    # Get first component to get a list of languages
+                    first_component = resources.get(id=resource.get('component')[0])
 
-                    with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                    for lang, term in first_component.prefLabel.items():
 
-                        # Add the first component. Always use subfield $a. Correct???
-                        term = rel.prefLabel[self.language.alpha2]
-                        builder.subfield(term.value, code='a')
+                        # Determine tag number based on the first component:
+                        if lang == self.language.alpha2:
+                            tag = self.tag_from_type(100, first_component.type[0])
+                        else:
+                            tag = self.tag_from_type(400, first_component.type[0])
 
-                        # Add remaining components
-                        for value in resource.get('component')[1:]:
-                            rel = resources.get(id=value)
+                        # Ignore this language if not *all* components have labels in it
+                        vals = [resources.get(id=value).prefLabel.get(lang) is None for value in resource.get('component')]
+                        if True in vals:
+                            continue
 
-                            # Determine subfield code from type:
-                            sf = {
-                                'Topic': 'x',
-                                'Temporal': 'y',
-                                'Geographic': 'z',
-                                'GenreForm': 'v',
-                            }[rel['type'][0]]
+                        with builder.datafield(tag=tag, ind1=' ', ind2=' '):
 
-                            # OBS! 150 har også $b.. Men når brukes egentlig den??
-                            term = rel.prefLabel[self.language.alpha2]
-                            builder.subfield(term.value, code=sf)
+                            # Add the first component. Always use subfield $a. Correct???
+                            term = first_component.prefLabel[lang]
+                            builder.subfield(term.value, code='a')
+
+                            # Add remaining components
+                            for value in resource.get('component')[1:]:
+                                component = resources.get(id=value)
+
+                                # Determine subfield code from type:
+                                sf = {
+                                    'Topic': 'x',
+                                    'Temporal': 'y',
+                                    'Geographic': 'z',
+                                    'GenreForm': 'v',
+                                }[component['type'][0]]
+
+                                # OBS! 150 har også $b.. Men når brukes egentlig den??
+                                term = component.prefLabel[lang]
+                                builder.subfield(term.value, code=sf)
+
+                            builder.subfield('rank=preferred', code='9')
+                            builder.subfield('language=' + lang, code='9')
+
+
 
                 else:  # Not a compound heading
                     for lang, term in resource.prefLabel.items():
@@ -326,6 +338,8 @@ class Marc21(Adapter):
                         # Always use subfield $a. Correct???
                         with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                             builder.subfield(term.value, code='a')
+                            builder.subfield('rank=preferred', code='9')
+                            builder.subfield('language=' + lang, code='9')
 
                         # Atm. acronyms only for primary language
                         if lang == self.language.alpha2:
@@ -340,6 +354,8 @@ class Marc21(Adapter):
                             with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                                 # Always use subfield $a. Correct???
                                 builder.subfield(term.value, code='a')
+                                builder.subfield('rank=alternative', code='9')
+                                builder.subfield('language=' + lang, code='9')
 
                             # Atm. acronyms only for primary language
                             if lang == self.language.alpha2:
