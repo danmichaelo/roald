@@ -403,12 +403,12 @@ class Marc21(Adapter):
                         builder.subfield(self.global_cn(value), code='0')
 
                 # 680 Notes
-                for value in resource.get('note', []):
+                for value in resource.get('editorialNote', []):
                     with builder.datafield(tag='680', ind1=' ', ind2=' '):
                         builder.subfield(value, code='i')
 
                 # 680 Notes (Definition)
-                for value in resource.get('definition', []):
+                for lang, value in resource.get('definition', {}).items():
                     with builder.datafield(tag='680', ind1=' ', ind2=' '):
                         builder.subfield(value, code='i')
 
