@@ -126,7 +126,8 @@ class Marc21(Adapter):
             'Topic': 50,
             'Geographic': 51,
             'GenreForm': 55,
-            'KnuteTerm': 50  # ... or..?
+            'KnuteTerm': 50,  # Knutetermer
+            'Collection': 50  # Fasettindikatorer
         }
         return '{:d}'.format(base + vals[res_type])
 
@@ -170,14 +171,6 @@ class Marc21(Adapter):
             if resourceType == 'VirtualCompoundHeading':
                 continue
 
-            # if resourceType == 'KnuteTerm':
-            #     # @TODO: Not sure how to handle these
-            #     continue
-
-            if resourceType == 'Collection':
-                # @TODO: Not sure how to handle these
-                continue
-
             with builder.record(xmlns='http://www.loc.gov/MARC21/slim', type='Authority'):
 
                 # Fixed leader for all records
@@ -206,7 +199,25 @@ class Marc21(Adapter):
                 builder.controlfield(modified.strftime('%Y%m%d%H%M%S.0'), tag='005')
 
                 # 008 General Information / Informasjonskoder
-                field008 = '{created}|||anz|naabn          |a|ana|||| d'.format(created=created.strftime('%y%m%d'))
+                f09 = 'a'  # Kind of record: Established heading
+                f14 = 'b'  # Heading use-main or added entry (1XX or 7XX fields): Not appropriate
+                f15 = 'a'  # Heading use-subject added entry (6XX fields): Appropriate
+
+                if resourceType == 'KnuteTerm':
+                    f15 = 'b'  # Not appropriate
+
+                # Fasetter
+                if resourceType == 'Collection':
+                    f09 = 'e'  # Node label
+                    f15 = 'b'  # Not appropriate
+
+                field008 = '{created}|||{f09}nz|n{f14}{f15}bn          |a|ana|||| d'.format(
+                    created=created.strftime('%y%m%d'),
+                    f09=f09,
+                    f14=f14,
+                    f15=f15
+                )
+
                 builder.controlfield(field008, tag='008')
 
                 # 024 Other Standard Identifier
