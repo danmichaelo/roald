@@ -207,6 +207,9 @@ class Skos(Adapter):
         if x is not None:
             graph.add((uri, LOCAL.elementSymbol, Literal(x)))
 
+        for x in resource.get('libCode', []):
+            graph.add((uri, LOCAL.libCode, Literal(x)))
+
         x = resource.get('id')
         if x is not None:
             graph.add((uri, DCTERMS.identifier, Literal(x)))
