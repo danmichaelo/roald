@@ -171,7 +171,9 @@ class Roald2(object):
                 elif key == 'tis':
                     concept.set('deprecated', value)
                 elif key == 'ba':
-                    concept.add('libCode', value)
+                    for x in value.split(','):
+                        if len(x.strip()) > 0:
+                            concept.add('libCode', x.strip())
                 elif key == 'st':
                     pass
                     # concept.add('streng', value)
