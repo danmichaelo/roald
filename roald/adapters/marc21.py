@@ -140,7 +140,9 @@ class Marc21(Adapter):
         if resource.get('created'):
             created = isodate.parse_datetime(resource.get('created'))
 
-        if resource.get('modified'):
+        if resource.get('deprecated'):
+            modified = isodate.parse_datetime(resource.get('deprecated'))
+        elif resource.get('modified'):
             modified = isodate.parse_datetime(resource.get('modified'))
 
         if created is None and modified is None:
