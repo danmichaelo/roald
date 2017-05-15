@@ -29,13 +29,15 @@ class Marc21(Adapter):
     modified_by = None  # Modifying agency 040 $d
     vocabulary_code = None  # Vocabulary code, 040 $f
     language = None  # Default language code for 040 $b
+    include_extras = False  # Whether to include $9 language and $9 rank codes
 
-    def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, mappings_from=None):
+    def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, mappings_from=None, include_extras=False):
         super(Marc21, self).__init__()
         self.vocabulary = vocabulary
         self.created_by = created_by
         self.vocabulary_code = vocabulary_code
         self.language = language or self.vocabulary.default_language
+        self.include_extras = include_extras
         if mappings_from is None:
             self.mappings_from = []
         else:
@@ -181,11 +183,11 @@ class Marc21(Adapter):
 
                 x = resource.get('replacedBy', [])
                 if len(x) > 1:
-                    record_status = 's'
+                    record_status = 's'  # replaced by more than one concept
                 elif len(x) == 1:
-                    record_status = 'x'
+                    record_status = 'x'  # replaced by one concept
                 elif resource.get('deprecated') is not None:
-                    record_status = 'd'
+                    record_status = 'd'  # deleted
 
                 leader = '00000{}z  a2200000n  4500'.format(record_status)
                 builder.leader(leader)
@@ -335,9 +337,9 @@ class Marc21(Adapter):
                                 term = component.prefLabel[lang]
                                 builder.subfield(term.value, code=sf)
 
-                            builder.subfield('rank=preferred', code='9')
-                            builder.subfield('language=' + lang, code='9')
-
+                            if self.include_extras:
+                                builder.subfield('rank=preferred', code='9')
+                                builder.subfield('language=' + lang, code='9')
 
 
                 else:  # Not a compound heading
@@ -351,8 +353,9 @@ class Marc21(Adapter):
                         # Always use subfield $a. Correct???
                         with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                             builder.subfield(term.value, code='a')
-                            builder.subfield('rank=preferred', code='9')
-                            builder.subfield('language=' + lang, code='9')
+                            if self.include_extras:
+                                builder.subfield('rank=preferred', code='9')
+                                builder.subfield('language=' + lang, code='9')
 
                         # Atm. acronyms only for primary language
                         if lang == self.language.alpha2:
@@ -367,8 +370,9 @@ class Marc21(Adapter):
                             with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                                 # Always use subfield $a. Correct???
                                 builder.subfield(term.value, code='a')
-                                builder.subfield('rank=alternative', code='9')
-                                builder.subfield('language=' + lang, code='9')
+                                if self.include_extras:
+                                    builder.subfield('rank=alternative', code='9')
+                                    builder.subfield('language=' + lang, code='9')
 
                             # Atm. acronyms only for primary language
                             if lang == self.language.alpha2:
