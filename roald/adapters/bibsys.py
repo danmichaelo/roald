@@ -87,6 +87,9 @@ class Bibsys(object):
         for node in record.findall('signatur'):
             obj.add('notation', node.text)
 
+        for node in record.findall('klass-signatur/signatur'):
+            obj.add('notation', node.text)
+
         for node in record.findall('toppterm-id'):
             if node.text == ident:
                 obj.set('isTopConcept', True)
