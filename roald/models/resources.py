@@ -45,6 +45,12 @@ class Label(object):
             o['acronymFor'] = self.acronymFor
         return o
 
+    def __str__(self):
+        return self.value
+
+    def __repr__(self):
+        return u'"{}"'.format(self.value)
+
 
 class Resource(object):
 

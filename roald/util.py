@@ -14,7 +14,7 @@ def array_set(arr, key, value, overwrite=True):
             arr[k] = {}
         if len(key) == 0:
             if arr[k] != {} and not overwrite:
-                raise StandardError('Key "{}" defined more than once for the resource: {}'.format(origkey, json.dumps(arr)))
+                raise RuntimeError('Key "{}" defined more than once for the resource: {}'.format(origkey, str(arr)))
             arr[k] = value
         arr = arr[k]
 

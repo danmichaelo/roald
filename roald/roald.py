@@ -5,6 +5,7 @@ import os
 from iso639 import languages
 import logging
 
+from .adapters import Mesh
 from .adapters import Bibsys
 from .adapters import Roald2
 from .adapters import Roald3
@@ -50,6 +51,9 @@ class Roald(object):
         elif format == 'bibsys':
             self.vocabulary.default_language = languages.get(alpha2=language)
             Bibsys(self.vocabulary).load(filename, **kwargs)
+        elif format == 'mesh':
+            self.vocabulary.default_language = languages.get(alpha2=language)
+            Mesh(self.vocabulary).load(filename, **kwargs)
         else:
             raise ValueError('Unknown format')
 
