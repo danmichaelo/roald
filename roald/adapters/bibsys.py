@@ -61,7 +61,7 @@ class Bibsys(object):
 
     def process_record(self, record, language, parents):
 
-        conceptType = 'Topic'   # TODO: Perhaps 'GenreForm' if string contains ' (Form)' qualifier?
+        conceptType = 'Topic'
 
         if record.find('se-id') is not None:  # We'll handle those in the second pass
             return
@@ -99,11 +99,11 @@ class Bibsys(object):
                 parents[ident] = parents.get(ident, []) + [node.text]
 
         prefLabel = self.get_label(record)
-        obj.set('prefLabel.{}'.format(language), Label(prefLabel))
-        if isinstance(record, Concept) and prefLabel.endswith('(Form)'):
+        if isinstance(obj, Concept) and prefLabel.endswith('(Form)'):
             logging.info('Setting GenreForm')
             obj.set_type('GenreForm')
             prefLabel = prefLabel[:-7]
+        obj.set('prefLabel.{}'.format(language), Label(prefLabel))
 
         dato = record.find('dato').text
         obj.set('modified', '{}T00:00:00Z'.format(dato))
