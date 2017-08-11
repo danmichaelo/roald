@@ -103,6 +103,7 @@ class Bibsys(object):
         if isinstance(record, Concept) and prefLabel.endswith('(Form)'):
             logging.info('Setting GenreForm')
             obj.set_type('GenreForm')
+            prefLabel = prefLabel[:-7]
 
         dato = record.find('dato').text
         obj.set('modified', '{}T00:00:00Z'.format(dato))
