@@ -270,6 +270,7 @@ class Marc21(Adapter):
 
                 cmappings = []
                 omappings = []
+                umappings = []
                 for tr in mappings.triples((URIRef(uri), None, None)):
                     m = ddc_matcher.match(tr[2])
                     m2 = vocab_matcher.match(tr[2])
@@ -287,6 +288,8 @@ class Marc21(Adapter):
                         if vocab and mappingRelationsRepr.get(tr[1]):
                             cid = {'humord': '(No-TrBIB)HUME', 'tekord': '(No-TrBIB)NTUB', 'realfagstermer': '(NoOU)REAL'}.get(m2.group(1)) + m2.group(2)
                             omappings.append({'vocab': vocab, 'id': cid, 'relation': mappingRelationsRepr[tr[1]]})
+                    else:
+                        umappings.append({'uri': text_type(tr[2]), 'relation': mappingRelationsRepr[tr[1]]})
 
                 for ma in sorted(cmappings, key=lambda k: '{},{},{}'.format(k['relation'], k['table'], k['number'])):
                     with builder.datafield(tag='083', ind1='0', ind2=' '):
@@ -436,4 +439,8 @@ class Marc21(Adapter):
                         # builder.subfield('???', code='a')
                         builder.subfield(ma['id'], code='0')
                         builder.subfield(ma['vocab'], code='2')
+                        builder.subfield(ma['relation'], code='4')
+                for ma in sorted(umappings, key=lambda k: k['uri']):
+                    with builder.datafield(tag='750', ind1=' ', ind2='4'):
+                        builder.subfield(ma['uri'], code='0')
                         builder.subfield(ma['relation'], code='4')
