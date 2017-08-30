@@ -148,6 +148,12 @@ class Resource(object):
         return self.uri_formatter.format(id=id[4:])
 
 
+class Category(Resource):
+
+    def __init__(self):
+        super(Category, self).__init__()
+        self._data['type'] = 'Category'
+
 
 class Group(Resource):
 
@@ -173,7 +179,7 @@ class Concept(Resource):
 
     def set_type(self, conceptType):
 
-        if conceptType not in ['Topic', 'Geographic', 'Temporal', 'GenreForm', 'CompoundHeading', 'VirtualCompoundHeading', 'KnuteTerm']:
+        if conceptType not in ['Topic', 'Geographic', 'Temporal', 'GenreForm', 'CompoundHeading', 'VirtualCompoundHeading', 'KnuteTerm', 'Category']:
             raise ValueError('Invalid concept type')
 
         conceptTypes = [conceptType]
@@ -249,6 +255,8 @@ class Resources(object):
                     instance = Collection().load(el)
                 elif 'Group' in el.get('type', []):
                     instance = Group().load(el)
+                elif 'Category' in el.get('type', []):
+                    instance = Category().load(el)
                 else:
                     instance = Concept().load(el)
 

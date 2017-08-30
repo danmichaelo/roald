@@ -83,7 +83,7 @@ class Skos(Adapter):
 
     def load(self, filename):
         """
-        Note: This loader only loads mappings
+        Note: This loader only loads categories and mappings
         """
         graph = Graph()
         graph.load(filename, format=self.extFromFilename(filename))
@@ -104,6 +104,25 @@ class Skos(Adapter):
                 except KeyError:
                     logger.warning('Concept not found: %s', res_id)
 
+        # Load categories
+        for tr in graph.triples((None, RDF.type, UOC.Category)):
+            cat_lab = graph.preferredLabel(tr[0], lang='nb')[0][1].value
+            cat_id = self.vocabulary.id_prefix + tr[0].split('/')[-1]
+
+            cat = Concept().set_type('Category')
+            cat.set('id', cat_id)
+            cat.set('prefLabel.nb', Label(cat_lab))
+            self.vocabulary.resources.load([cat])
+
+
+            for tr2 in graph.triples((tr[0], SKOS.member, None)):
+                uri = str(tr2[2])
+                res_id = self.vocabulary.id_from_uri(uri)
+                if res_id is not None:
+                    try:
+                        self.vocabulary.resources[res_id].add('memberOf', cat_id)
+                    except KeyError:
+                        logger.warning('Concept not found: %s', res_id)
 
     def serialize(self):
 
@@ -257,8 +276,8 @@ class Skos(Adapter):
             rel_uri = URIRef(self.vocabulary.uri(c['id']))
             graph.add((uri, DCTERMS.isReplacedBy, rel_uri))
 
-        for res_id in resource.get('member', []):
-            graph.add((uri, SKOS.member, URIRef(self.vocabulary.uri(res_id))))
+        for res_id in resource.get('memberOf', []):
+            graph.add((URIRef(self.vocabulary.uri(res_id)), SKOS.member, uri))
 
         for res_id in resource.get('superOrdinate', []):
             uri2 = URIRef(self.vocabulary.uri(res_id))

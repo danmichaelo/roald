@@ -45,22 +45,23 @@ class TestResources(unittest.TestCase):
             'type': ['Topic'],
             'prefLabel': {'nb': {'value': 'Fornybar energi'}},
             'altLabel': {'nb': [{'value': 'Fornybare energikilder'}]},
-            'hiddenLabel': {'nb': [{'value': 'Forybar energi'}]}
+            'hiddenLabel': {'nb': [{'value': 'Forybar energi'}]},
+            'memberOf': ['REAL022147'],
         },
         {
             'id': 'REAL013995',
             'type': ['Topic'],
-            'prefLabel': {'nb': {'value': 'Livssyklusanalyse'}}
+            'prefLabel': {'nb': {'value': 'Livssyklusanalyse'}},
+            'memberOf': ['REAL022147'],
         },
         {
             'id': 'REAL022146',
             'type': ['VirtualCompoundConcept'],
-            'component': ['REAL012789', 'REAL013995']
+            'component': ['REAL012789', 'REAL013995'],
         },
         {
             'id': 'REAL022147',
             'type': ['Collection'],
-            'member': ['REAL012789', 'REAL013995'],
             'prefLabel': {'nb': {'value': 'Energi'}}
         }
     ]

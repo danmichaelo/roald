@@ -31,7 +31,7 @@ class Marc21(Adapter):
     language = None  # Default language code for 040 $b
     include_extras = False  # Whether to include $9 language and $9 rank codes
 
-    def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, mappings_from=None, include_extras=False):
+    def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, mappings_from=None, include_extras=False, include_memberships=False):
         super(Marc21, self).__init__()
         self.vocabulary = vocabulary
         self.created_by = created_by
@@ -42,6 +42,7 @@ class Marc21(Adapter):
             self.mappings_from = []
         else:
             self.mappings_from = mappings_from
+        self.include_memberships = include_memberships
 
     def serialize(self):
 
@@ -68,6 +69,9 @@ class Marc21(Adapter):
         for c in self.vocabulary.resources:
             for x in c.get('broader', []):
                 self.narrower[x] = self.narrower.get(x, []) + [c['id']]
+            if self.include_memberships:
+                for x in c.get('memberOf', []):
+                    self.narrower[x] = self.narrower.get(x, []) + [c['id']]
 
         # Make a dictionary of 'replaces' (inverse 'replacedBy') for fast lookup
         self.replaces = {}
@@ -129,7 +133,8 @@ class Marc21(Adapter):
             'Geographic': 51,
             'GenreForm': 55,
             'KnuteTerm': 50,  # Knutetermer
-            'Collection': 50  # Fasettindikatorer
+            'Collection': 50, # Fasettindikatorer
+            'Category': 50,   # i realfagstermer
         }
         return '{:d}'.format(base + vals[res_type])
 
@@ -173,6 +178,9 @@ class Marc21(Adapter):
         for resourceType in resource.get('type'):
 
             if resourceType == 'VirtualCompoundHeading':
+                continue
+
+            if resourceType == 'Category' and not self.include_memberships:
                 continue
 
             with builder.record(xmlns='http://www.loc.gov/MARC21/slim', type='Authority'):
@@ -387,9 +395,13 @@ class Marc21(Adapter):
                     'Topic': '550',
                     'Geographic': '551',
                     'GenreForm': '555',
-                    'KnuteTerm': '550'  # @TODO: ???
+                    'KnuteTerm': '550',  # @TODO: ???
+                    'Category': '550',
                 }
-                for value in resource.get('broader', []):
+                broader = resource.get('broader', [])
+                if self.include_memberships:
+                    broader += resource.get('memberOf', [])
+                for value in broader:
                     rel = resources.get(id=value)
                     rel_type = rel['type'][0]
                     if rel_type in tags:
