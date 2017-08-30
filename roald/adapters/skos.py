@@ -1,5 +1,6 @@
 # encoding=utf-8
 import isodate
+
 from rdflib.graph import Graph, Literal
 from rdflib.namespace import Namespace, URIRef, OWL, RDF, DC, DCTERMS, FOAF, XSD, SKOS, RDFS
 from rdflib.collection import Collection
@@ -10,6 +11,8 @@ from datetime import datetime
 import logging
 
 from .adapter import Adapter
+from ..models.resources import Concept
+from ..models.resources import Label
 
 try:
     from skosify import Skosify
@@ -33,6 +36,7 @@ ISOTHES = Namespace('http://purl.org/iso25964/skos-thes#')
 MADS = Namespace('http://www.loc.gov/mads/rdf/v1#')
 SD = Namespace('http://www.w3.org/ns/sparql-service-description#')
 LOCAL = Namespace('http://data.ub.uio.no/onto#')
+UOC = Namespace('http://trans.biblionaut.net/class#')
 
 
 class Skos(Adapter):
@@ -76,6 +80,30 @@ class Skos(Adapter):
             self.add_same_as = []
         else:
             self.add_same_as = add_same_as
+
+    def load(self, filename):
+        """
+        Note: This loader only loads mappings
+        """
+        graph = Graph()
+        graph.load(filename, format=self.extFromFilename(filename))
+        skosify = Skosify()
+        skosify.enrich_relations(graph,
+                                 enrich_mappings=True,
+                                 use_narrower=False,
+                                 use_transitive=False)
+
+        # Load mappings
+        for tr in graph.triples_choices((None, [SKOS.exactMatch, SKOS.closeMatch, SKOS.broadMatch, SKOS.narrowMatch, SKOS.relatedMatch], None)):
+            source_concept = tr[0]
+            res_id = self.vocabulary.id_from_uri(source_concept)
+            if res_id is not None:
+                shortName = str(tr[1]).split('#')[1]
+                try:
+                    self.vocabulary.resources[res_id].add('mappings.%s' % shortName, str(tr[2]))
+                except KeyError:
+                    logger.warning('Concept not found: %s', res_id)
+
 
     def serialize(self):
 
@@ -244,6 +272,10 @@ class Skos(Adapter):
             graph.add((uri, SKOS.broader, rel_uri))
             if self.options['include_narrower']:
                 graph.add((rel_uri, SKOS.narrower, uri))
+
+        for mapping_type, target_uris in resource.get('mappings', {}).items():
+            for target_uri in target_uris:
+                graph.add((uri, SKOS[mapping_type], URIRef(target_uri)))
 
         components = [resources.get(id=value) for value in resource.get('component', [])]
         if len(components) != 0:

@@ -162,11 +162,11 @@ class Marc21(Adapter):
         ddc_matcher = re.compile(r'http://dewey.info/class/(([1-9])--)?([0-9.]+)')
         vocab_matcher = re.compile(r'http://data.ub.uio.no/([a-z]+)/c([0-9]+)')
         mappingRelationsRepr = {
-            SKOS.exactMatch: '=EQ',
-            SKOS.closeMatch: '~EQ',
-            SKOS.relatedMatch: 'RM',
-            SKOS.broadMatch: 'BM',
-            SKOS.narrowMatch: 'NM'
+            'exactMatch': '=EQ',
+            'closeMatch': '~EQ',
+            'relatedMatch': 'RM',
+            'broadMatch': 'BM',
+            'narrowMatch': 'NM'
         }
 
         # Loop over resource types

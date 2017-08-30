@@ -54,13 +54,16 @@ class Roald(object):
         elif format == 'mesh':
             self.vocabulary.default_language = languages.get(alpha2=language)
             Mesh(self.vocabulary).load(filename, **kwargs)
+        elif format == 'skos':
+            Skos(self.vocabulary).load(filename)
         else:
             raise ValueError('Unknown format')
 
         logger.info('Loaded {} resources'.format(len(self.vocabulary.resources)))
 
-    def set_uri_format(self, value):
+    def set_uri_format(self, value, prefix=''):
         self.vocabulary.uri_format = value
+        self.vocabulary.id_prefix = prefix
 
     def save(self, filename):
         filename = os.path.expanduser(filename)

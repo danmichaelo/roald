@@ -9,6 +9,7 @@ class Vocabulary(object):
 
     def __init__(self):
         super(Vocabulary, self).__init__()
+        self.id_prefix = ''
         self._uri_format = None
         self._default_language = None
         self.resources = Resources()
@@ -37,3 +38,10 @@ class Vocabulary(object):
             raise Exception('URI format has not been set.')
         return self._uri_format.format(id=re.sub('[^0-9]', '', id))
         # Removes the REAL, HUME, SMR prefixes. @TODO: Should probably rather remove these during import.
+
+    def id_from_uri(self, uri):
+        pattern = self._uri_format.format(id='([0-9]+)')
+        m = re.match(pattern, uri)
+        if m is None:
+            return None
+        return self.id_prefix + m.group(1)
