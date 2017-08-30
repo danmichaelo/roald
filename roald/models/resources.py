@@ -1,5 +1,4 @@
 # encoding=utf-8
-from __future__ import print_function
 import isodate
 import json
 import codecs
@@ -90,6 +89,10 @@ class Resource(object):
 
     def load(self, data):
         self._data = deepcopy(data)
+        if 'prefLabel' not in self._data:
+            self._data['prefLabel'] = {}
+            self._data['altLabel'] = {}
+            self._data['hiddenfLabel'] = {}
 
         for lang, label in self._data.get('prefLabel', {}).items():
             array_set(self._data, 'prefLabel.{}'.format(lang), Label().load(label))
@@ -123,7 +126,10 @@ class Resource(object):
 
     def set(self, key, value):
         self.blank = False
-        array_set(self._data, key, value, False)
+        if key.split('.')[0] in ['prefLabel', 'altLabel', 'hiddenLabel'] and not isinstance(value, Label):
+            array_set(self._data, key, Label(value), False)
+        else:
+            array_set(self._data, key, value, False)
         return self  # for chaining
 
     def get(self, key, default=None):

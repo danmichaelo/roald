@@ -58,6 +58,7 @@ class TestResources(unittest.TestCase):
             'id': 'REAL022146',
             'type': ['VirtualCompoundConcept'],
             'component': ['REAL012789', 'REAL013995'],
+            'prefLabel': {}
         },
         {
             'id': 'REAL022147',
