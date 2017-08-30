@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 
 class Marc21(Adapter):
     """
-    Class for exporting data as MARC21
+    MARC21 exporter
+
+    URIs are included if `uri_format` is set on the Vocabulary.
     """
 
     vocabulary = None
@@ -31,17 +33,13 @@ class Marc21(Adapter):
     language = None  # Default language code for 040 $b
     include_extras = False  # Whether to include $9 language and $9 rank codes
 
-    def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, mappings_from=None, include_extras=False, include_memberships=False):
+    def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, include_extras=False, include_memberships=False):
         super(Marc21, self).__init__()
         self.vocabulary = vocabulary
         self.created_by = created_by
         self.vocabulary_code = vocabulary_code
         self.language = language or self.vocabulary.default_language
         self.include_extras = include_extras
-        if mappings_from is None:
-            self.mappings_from = []
-        else:
-            self.mappings_from = mappings_from
         self.include_memberships = include_memberships
 
     def serialize(self):
@@ -51,18 +49,6 @@ class Marc21(Adapter):
 
         if type(self.language) != iso639.iso639._Language:
             raise RuntimeError('MARC21 language must be an instance of iso639.iso639._Language.')
-
-        # Load mappings
-        mappings = Graph()
-        for inc in self.mappings_from:
-            self.load_mappings(inc, mappings)
-            #logger.info(' - Loaded {} (two-way) mappings from {}'.format(len(mappings), inc))
-
-        skosify = Skosify()
-        skosify.enrich_relations(mappings,
-                                 enrich_mappings=True,
-                                 use_narrower=False,
-                                 use_transitive=False)
 
         # Make a dictionary of 'narrower' (reverse 'broader') for fast lookup
         self.narrower = {}
@@ -84,7 +70,7 @@ class Marc21(Adapter):
         self.nmappings = 0
         with builder.collection(xmlns='info:lc/xmlns/marcxchange-v1'):
             for resource in self.vocabulary.resources:
-                self.convert_resource(builder, resource, self.vocabulary.resources, mappings)
+                self.convert_resource(builder, resource, self.vocabulary.resources)
 
         logger.info(' - Included %d DDC mappings', self.nmappings)
 
@@ -138,8 +124,7 @@ class Marc21(Adapter):
         }
         return '{:d}'.format(base + vals[res_type])
 
-    def convert_resource(self, builder, resource, resources, mappings):
-
+    def convert_resource(self, builder, resource, resources):
 
         created = None
         modified = None
@@ -163,7 +148,11 @@ class Marc21(Adapter):
         elif modified is None:
             modified = created
 
-        uri = self.vocabulary.uri(resource.get('id'))
+
+        if self.vocabulary.uri_format is not None:
+            uri = self.vocabulary.uri(resource.get('id'))
+        else:
+            uri = None
         ddc_matcher = re.compile(r'http://dewey.info/class/(([1-9])--)?([0-9.]+)')
         vocab_matcher = re.compile(r'http://data.ub.uio.no/([a-z]+)/c([0-9]+)')
         mappingRelationsRepr = {
@@ -233,7 +222,7 @@ class Marc21(Adapter):
                 builder.controlfield(field008, tag='008')
 
                 # 024 Other Standard Identifier
-                if self.vocabulary.uri_format is not None:
+                if uri is not None:
                     with builder.datafield(tag='024', ind1='7', ind2=' '):
                         builder.subfield(uri, code='a')
                         builder.subfield('uri', code='2')
@@ -279,25 +268,26 @@ class Marc21(Adapter):
                 cmappings = []
                 omappings = []
                 umappings = []
-                for tr in mappings.triples((URIRef(uri), None, None)):
-                    m = ddc_matcher.match(tr[2])
-                    m2 = vocab_matcher.match(tr[2])
-                    if m:
-                        ma = {'number': m.group(3), 'relation': mappingRelationsRepr.get(tr[1])}
-                        if ma['relation'] is not None:
-                            self.nmappings += 1
-                            if m.group(2) is not None:
-                                ma['table'] = m.group(2)
-                            else:
-                                ma['table'] = ''
-                            cmappings.append(ma)
-                    elif m2:
-                        vocab = {'humord': 'humord', 'realfagstermer': 'noubomn', 'tekord': 'tekord'}.get(m2.group(1))
-                        if vocab and mappingRelationsRepr.get(tr[1]):
-                            cid = {'humord': '(No-TrBIB)HUME', 'tekord': '(No-TrBIB)NTUB', 'realfagstermer': '(NoOU)REAL'}.get(m2.group(1)) + m2.group(2)
-                            omappings.append({'vocab': vocab, 'id': cid, 'relation': mappingRelationsRepr[tr[1]]})
-                    else:
-                        umappings.append({'uri': text_type(tr[2]), 'relation': mappingRelationsRepr[tr[1]]})
+                for mapping_type, target_uris in resource.get('mappings', {}).items():
+                    for target_uri in target_uris:
+                        m = ddc_matcher.match(target_uri)
+                        m2 = vocab_matcher.match(target_uri)
+                        if m:
+                            ma = {'number': m.group(3), 'relation': mappingRelationsRepr.get(mapping_type)}
+                            if ma['relation'] is not None:
+                                self.nmappings += 1
+                                if m.group(2) is not None:
+                                    ma['table'] = m.group(2)
+                                else:
+                                    ma['table'] = ''
+                                cmappings.append(ma)
+                        elif m2:
+                            vocab = {'humord': 'humord', 'realfagstermer': 'noubomn', 'tekord': 'tekord'}.get(m2.group(1))
+                            if vocab and mappingRelationsRepr.get(mapping_type):
+                                cid = {'humord': '(No-TrBIB)HUME', 'tekord': '(No-TrBIB)NTUB', 'realfagstermer': '(NoOU)REAL'}.get(m2.group(1)) + m2.group(2)
+                                omappings.append({'vocab': vocab, 'id': cid, 'relation': mappingRelationsRepr[mapping_type]})
+                        else:
+                            umappings.append({'uri': text_type(target_uri), 'relation': mappingRelationsRepr[mapping_type]})
 
                 for ma in sorted(cmappings, key=lambda k: '{},{},{}'.format(k['relation'], k['table'], k['number'])):
                     with builder.datafield(tag='083', ind1='0', ind2=' '):
