@@ -379,6 +379,13 @@ class Marc21(Adapter):
                             if lang == self.language.alpha2:
                                 self.add_acronyms(builder, term, resourceType)
 
+                # Add 4XX linking for replaced concepts.
+                for value in self.replaces.get(resource['id'], []):
+                    rel = resources.get(id=value)
+                    with builder.datafield(tag=self.tag_from_type(400, rel['type'][0]), ind1=' ', ind2=' '):
+                        builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
+                        builder.subfield(self.global_cn(value), code='0')
+
                 # 548/550/551/555 See also
                 tags = {
                     'Temporal': '548',
@@ -391,38 +398,36 @@ class Marc21(Adapter):
                 broader = resource.get('broader', [])
                 if self.include_memberships:
                     broader += resource.get('memberOf', [])
-                for value in broader:
-                    rel = resources.get(id=value)
-                    rel_type = rel['type'][0]
-                    if rel_type in tags:
+
+                if not resource.get('deprecated'):
+                    # Only include relations for non-deprecated concepts
+
+                    for value in broader:
+                        rel = resources.get(id=value)
+                        rel_type = rel['type'][0]
+                        if rel_type in tags:
+                            with builder.datafield(tag=tags[rel_type], ind1=' ', ind2=' '):
+                                builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
+                                builder.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
+                                builder.subfield(self.global_cn(value), code='0')
+                        else:
+                            logger.warn('Cannot serialize "%s" <broader> "%s", because the latter has a unknown type.', value, rel['id'])
+
+                    for value in self.narrower.get(resource['id'], []):
+                        rel = resources.get(id=value)
+                        rel_type = rel['type'][0]
                         with builder.datafield(tag=tags[rel_type], ind1=' ', ind2=' '):
                             builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
-                            builder.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
+                            builder.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
                             builder.subfield(self.global_cn(value), code='0')
-                    else:
-                        logger.warn('Cannot serialize "%s" <broader> "%s", because the latter has a unknown type.', value, rel['id'])
 
-                for value in self.narrower.get(resource['id'], []):
-                    rel = resources.get(id=value)
-                    rel_type = rel['type'][0]
-                    with builder.datafield(tag=tags[rel_type], ind1=' ', ind2=' '):
-                        builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
-                        builder.subfield('h', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
-                        builder.subfield(self.global_cn(value), code='0')
-
-                for value in self.replaces.get(resource['id'], []):
-                    rel = resources.get(id=value)
-                    with builder.datafield(tag=self.tag_from_type(400, rel['type'][0]), ind1=' ', ind2=' '):
-                        builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
-                        builder.subfield(self.global_cn(value), code='0')
-
-                for value in resource.get('related', []):
-                    rel = resources.get(id=value)
-                    tag = self.tag_from_type(500, rel['type'][0])
-                    # Note: rel['type'][0] can be 'KnuteTerm'! How to handle?
-                    with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                        builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
-                        builder.subfield(self.global_cn(value), code='0')
+                    for value in resource.get('related', []):
+                        rel = resources.get(id=value)
+                        tag = self.tag_from_type(500, rel['type'][0])
+                        # Note: rel['type'][0] can be 'KnuteTerm'! How to handle?
+                        with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                            builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
+                            builder.subfield(self.global_cn(value), code='0')
 
                 # 680 Notes
                 for value in resource.get('editorialNote', []):
