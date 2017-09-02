@@ -364,27 +364,32 @@ class Marc21(Adapter):
 
                     # Add 448/450/451/455 See from tracings
                     for lang, terms in resource.get('altLabel', {}).items():
-
                         tag = self.tag_from_type(400, resourceType)
-                        # if lang == self.language.alpha2:
                         for term in terms:
+                            term_value = term.value
+                            term_id = None
+
+                            # Check if term is found in any of the replaced concepts,
+                            # so we can establish a link ($0)
+                            for value in self.replaces.get(resource['id'], []):
+                                rel = resources.get(id=value)
+                                if rel.prefLabel.get(lang) is not None and rel.prefLabel[lang].value == term.value:
+                                    tag = self.tag_from_type(400, rel['type'][0])
+                                    term_value = rel.prefLabel[lang].value
+                                    term_id = self.global_cn(value)
+
                             with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                                 # Always use subfield $a. Correct???
-                                builder.subfield(term.value, code='a')
+                                builder.subfield(term_value, code='a')
                                 if self.include_extras:
                                     builder.subfield('rank=alternative', code='9')
                                     builder.subfield('language=' + lang, code='9')
+                                if term_id is not None:
+                                    builder.subfield(term_id, code='0')
 
                             # Atm. acronyms only for primary language
                             if lang == self.language.alpha2:
                                 self.add_acronyms(builder, term, resourceType)
-
-                # Add 4XX linking for replaced concepts.
-                for value in self.replaces.get(resource['id'], []):
-                    rel = resources.get(id=value)
-                    with builder.datafield(tag=self.tag_from_type(400, rel['type'][0]), ind1=' ', ind2=' '):
-                        builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
-                        builder.subfield(self.global_cn(value), code='0')
 
                 # 548/550/551/555 See also
                 tags = {
