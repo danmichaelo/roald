@@ -37,7 +37,7 @@ class Roald3(object):
             'resources': self.vocabulary.resources.serialize()
         }
 
-        jsondump = json.dumps(data, indent=2, sort_keys=True)
+        jsondump = json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False)
 
         # Remove trailling spaces (https://bugs.python.org/issue16333)
         jsondump = re.sub('\s+$', '', jsondump, flags=re.MULTILINE)
