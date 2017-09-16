@@ -55,7 +55,7 @@ class Marc21(Adapter):
         for c in self.vocabulary.resources:
             for x in c.get('broader', []):
                 self.narrower[x] = self.narrower.get(x, []) + [c['id']]
-            if self.include_memberships:
+            if self.include_memberships and not c.get('deprecated'):
                 for x in c.get('memberOf', []):
                     self.narrower[x] = self.narrower.get(x, []) + [c['id']]
 
