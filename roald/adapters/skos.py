@@ -300,8 +300,11 @@ class Skos(Adapter):
         if len(components) != 0:
 
             # @TODO: Generalize
-            for lang in ['nb']:
-                labels = [c.prefLabel[lang].value for c in components if c['prefLabel'].get(lang)]
+            fallback_lang = 'nb'
+            for lang in ['nb', 'nn', 'en']:
+                labels = [component['prefLabel'].get(lang, component['prefLabel'].get(fallback_lang)) for component in components]
+                labels = [component.value for component in labels if component]
+                # labels = [c.prefLabel[lang].value for c in components if c['prefLabel'].get(lang, fallback_lang)]
                 if len(labels) == len(components):
                     streng = resources.string_separator.join(labels)
                     graph.add((uri, SKOS.prefLabel, Literal(streng, lang=lang)))
