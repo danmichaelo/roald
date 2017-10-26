@@ -4,7 +4,6 @@ import isodate
 from rdflib.graph import Graph, Literal
 from rdflib.namespace import Namespace, URIRef, OWL, RDF, DC, DCTERMS, FOAF, XSD, SKOS, RDFS
 from rdflib.collection import Collection
-from rdflib import BNode
 from otsrdflib import OrderedTurtleSerializer
 from six import binary_type
 from datetime import datetime
@@ -311,22 +310,12 @@ class Skos(Adapter):
 
             component_uris = [URIRef(self.vocabulary.uri(c['id'])) for c in components]
 
-            component = component_uris.pop(0)
-            b1 = BNode()
-            graph.add((uri, MADS.componentList, b1))
-            graph.add((b1, RDF.first, component))
-            graph.add((uri, SKOS.broader, component))
-            if self.options['include_narrower']:
-                graph.add((component, SKOS.narrower, uri))
-
-            for component in component_uris:
-                b2 = BNode()
-                graph.add((b1, RDF.rest, b2))
-                graph.add((b2, RDF.first, component))
-                b1 = b2
-
-            graph.add((b1, RDF.rest, RDF.nil))
-            # graph.add((uri, SKOS.broader, component))
+            for component_uri in component_uris:
+                graph.add((uri, LOCAL.component, component_uri))
+                graph.add((uri, SKOS.broader, component_uri))
+                if self.options['include_narrower']:
+                    graph.add((component_uri, SKOS.narrower, uri))
+                    graph.add((component_uri, LOCAL.compound, uri))
 
         for same_as in add_same_as:
             graph.add((uri, OWL.sameAs, URIRef(same_as.format(id=resource['id']))))
