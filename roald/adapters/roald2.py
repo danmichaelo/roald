@@ -5,8 +5,11 @@ import xmlwitch
 import codecs
 import os
 import re
+import logging
 from ..models.resources import Concept
 from ..models.resources import Label
+
+logger = logging.getLogger(__name__)
 
 
 class Roald2(object):
@@ -41,6 +44,7 @@ class Roald2(object):
             raise RuntimeError('Found no resources in {}'.format(path))
 
         self.vocabulary.resources.load(resources)
+        logger.info('Loaded %d concepts from %s', len(resources), path)
 
     def read_file(self, filename, conceptType, language_code):
         print(filename)

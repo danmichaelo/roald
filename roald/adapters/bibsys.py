@@ -46,6 +46,7 @@ class Bibsys(object):
             record.clear()
 
         self.vocabulary.resources.load(resources)
+        logger.info('Loaded %d concepts from %s', len(resources), filename)
 
     def get_label(self, record):
         label = record.find('hovedemnefrase').text
@@ -100,7 +101,6 @@ class Bibsys(object):
 
         prefLabel = self.get_label(record)
         if isinstance(obj, Concept) and prefLabel.endswith('(Form)'):
-            logging.info('Setting GenreForm')
             obj.set_type('GenreForm')
             prefLabel = prefLabel[:-7]
         obj.set('prefLabel.{}'.format(language), Label(prefLabel))

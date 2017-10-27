@@ -86,6 +86,9 @@ class Skos(Adapter):
         """
         graph = Graph()
         graph.load(filename, format=self.extFromFilename(filename))
+
+        logger.info('Read %d triples from %s', len(graph), filename)
+
         skosify = Skosify()
         skosify.enrich_relations(graph,
                                  enrich_mappings=True,
@@ -93,6 +96,8 @@ class Skos(Adapter):
                                  use_transitive=False)
 
         # Load mappings
+        n_mappings = 0
+        n_memberships = 0
         for tr in graph.triples_choices((None, [SKOS.exactMatch, SKOS.closeMatch, SKOS.broadMatch, SKOS.narrowMatch, SKOS.relatedMatch], None)):
             source_concept = tr[0]
             res_id = self.vocabulary.id_from_uri(source_concept)
@@ -100,6 +105,7 @@ class Skos(Adapter):
                 shortName = str(tr[1]).split('#')[1]
                 try:
                     self.vocabulary.resources[res_id].add('mappings.%s' % shortName, str(tr[2]))
+                    n_mappings += 1
                 except KeyError:
                     logger.warning('Concept not found: %s', res_id)
 
@@ -120,8 +126,11 @@ class Skos(Adapter):
                 if res_id is not None:
                     try:
                         self.vocabulary.resources[res_id].add('memberOf', cat_id)
+                        n_memberships += 1
                     except KeyError:
                         logger.warning('Concept not found: %s', res_id)
+
+        logger.info('Loaded %d mappings and %d category memberships from %s', n_mappings, n_memberships, filename)
 
     def serialize(self):
 
