@@ -112,7 +112,7 @@ class Skos(Adapter):
         # Load categories
         for tr in graph.triples((None, RDF.type, UOC.Category)):
             cat_lab = graph.preferredLabel(tr[0], lang='nb')[0][1].value
-            cat_id = self.vocabulary.id_prefix + tr[0].split('/')[-1]
+            cat_id = '' + tr[0]
 
             cat = Concept().set_type('Category')
             cat.set('id', cat_id)
@@ -158,7 +158,6 @@ class Skos(Adapter):
         logger.info(' - Added {} triples'.format(len(graph) - lg0))
 
         all_concepts = set([tr[0] for tr in graph.triples((None, RDF.type, SKOS.Concept))])
-        skosify = Skosify()
         for inc in self.mappings_from:
             lg0 = len(graph)
             mappings = self.load_mappings(inc)

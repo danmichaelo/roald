@@ -34,6 +34,8 @@ class Vocabulary(object):
         self._default_language = value
 
     def uri(self, id):  # TODO: Move into Concept/Collection class
+        if id.startswith('http://'):
+            return id
         if self._uri_format is None:
             raise Exception('URI format has not been set.')
         return self._uri_format.format(id=re.sub('[^0-9]', '', id))
