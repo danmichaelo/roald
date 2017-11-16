@@ -2,6 +2,7 @@
 import isodate
 import xmlwitch
 import iso639
+import copy
 import logging
 from six import text_type
 from rdflib import URIRef
@@ -400,7 +401,7 @@ class Marc21(Adapter):
                     'KnuteTerm': '550',  # @TODO: ???
                     'Category': '550',
                 }
-                broader = resource.get('broader', [])
+                broader = copy.copy(resource.get('broader', []))
                 if self.include_memberships:
                     broader += resource.get('memberOf', [])
 
