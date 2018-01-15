@@ -1,6 +1,6 @@
 from rdflib.graph import Graph, Literal
 from rdflib.namespace import Namespace, URIRef, OWL, RDF, DC, DCTERMS, FOAF, XSD, SKOS, RDFS
-from skosify import Skosify
+import skosify
 
 
 class Adapter(object):
@@ -16,11 +16,7 @@ class Adapter(object):
             graph = Graph()
         tmp.load(filename, format=self.extFromFilename(filename))
 
-        skosify = Skosify()
-        skosify.enrich_relations(tmp,
-                                 enrich_mappings=True,
-                                 use_narrower=False,
-                                 use_transitive=False)
+        skosify.infer.symmetric_mappings(tmp)
 
         for tr in tmp.triples_choices((None, [SKOS.exactMatch, SKOS.closeMatch, SKOS.broadMatch, SKOS.narrowMatch, SKOS.relatedMatch], None)):
             #if tr[0] in all_concepts:

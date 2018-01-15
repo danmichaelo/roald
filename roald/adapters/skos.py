@@ -13,10 +13,7 @@ from .adapter import Adapter
 from ..models.resources import Concept
 from ..models.resources import Label
 
-try:
-    from skosify import Skosify
-except:
-    raise RuntimeError('Please install skosify first')
+import skosify
 
 try:
     from io import BytesIO
@@ -89,11 +86,7 @@ class Skos(Adapter):
 
         logger.info('Read %d triples from %s', len(graph), filename)
 
-        skosify = Skosify()
-        skosify.enrich_relations(graph,
-                                 enrich_mappings=True,
-                                 use_narrower=False,
-                                 use_transitive=False)
+        skosify.infer.skos_symmetric_mappings(graph, related=False)
 
         # Load mappings
         n_mappings = 0
@@ -329,69 +322,7 @@ class Skos(Adapter):
             graph.add((uri, OWL.sameAs, URIRef(same_as.format(id=resource['id']))))
 
     def skosify_process(self, graph):
-
-        # logging.info("Performing inferences")
-
-        skosify = Skosify()
-
-        # Perform RDFS subclass inference.
-        # Mark all resources with a subclass type with the upper class.
-        # skosify.infer_classes(graph)
-        # skosify.infer_properties(graph)
-
-        # logging.info("Setting up namespaces")
-        # skosify.setup_namespaces(graph, namespaces)
-
-        # logging.info("Phase 4: Transforming concepts, literals and relations")
-
-        # special transforms for labels: whitespace, prefLabel vs altLabel
-        # skosify.transform_labels(graph, options.default_language)
-
-        # special transforms for collections + aggregate and deprecated concepts
-        # skosify.transform_collections(graph)
-
-        # find concept schema and update date modified
-        # cs = skosify.get_concept_scheme(graph)
-        # skosify.initialize_concept_scheme(graph, cs,
-        #                                   label=False,
-        #                                   language='nb',
-        #                                   set_modified=True)
-
-        # skosify.transform_aggregate_concepts(graph, cs, relationmap, options.aggregates)
-        # skosify.transform_deprecated_concepts(graph, cs)
-
-        # logging.info("Phase 5: Performing SKOS enrichments")
-
-        # Enrichments: broader <-> narrower, related <-> related
-        # skosify.enrich_relations(graph,
-        #                          enrich_mappings=True,
-        #                          use_narrower=False,
-        #                          transitive=False)
-
-        # logging.info("Phase 6: Cleaning up")
-
-        # Clean up unused/unnecessary class/property definitions and unreachable
-        # triples
-        # if options.cleanup_properties:
-        #     skosify.cleanup_properties(graph)
-        # if options.cleanup_classes:
-        #     skosify.cleanup_classes(graph)
-        # if options.cleanup_unreachable:
-        #     skosify.cleanup_unreachable(graph)
-
-        # logging.info("Phase 7: Setting up concept schemes and top concepts")
-
-        # setup inScheme and hasTopConcept
-        # skosify.setup_concept_scheme(graph, cs)
-        # skosify.setup_top_concepts(graph, options.mark_top_concepts)
-
-        # logging.info("Phase 8: Checking concept hierarchy")
-
-        # check hierarchy for cycles
-        skosify.check_hierarchy(graph, break_cycles=True, keep_related=False,
-                                mark_top_concepts=False, eliminate_redundancy=True)
-
-        # logging.info("Phase 9: Checking labels")
-
-        # check for duplicate labels
-        # skosify.check_labels(graph, options.preflabel_policy)
+        # check hierarchy for problems
+        skosify.check.hierarchy_cycles(graph, True)
+        skosify.check.disjoint_relations(graph, True)
+        skosify.check.hierarchical_redundancy(graph, True)

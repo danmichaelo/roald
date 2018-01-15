@@ -21,17 +21,18 @@ setup(name='roald',
                         'iso-639',
                         'otsrdflib',
                         'six',
-                        'skosify',  # While waiting for a new release, we need to use master
+                        'skosify==2.0.2.dev1',
                         ],
       dependency_links=[
         'https://github.com/danmichaelo/xmlwitch/tarball/0.3.0#egg=xmlwitch-0.3.0',
-        'https://github.com/NatLibFi/Skosify/tarball/master#egg=skosify-1.0.2.dev1'
+        'https://github.com/danmichaelo/Skosify/tarball/patch-mappings#egg=skosify-2.0.2.dev1'
       ],
       classifiers=[
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: MIT License',
       ]
       )

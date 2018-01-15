@@ -9,10 +9,6 @@ from rdflib import URIRef
 from rdflib.graph import Graph, Literal
 from rdflib.namespace import SKOS
 import re
-try:
-    from skosify import Skosify
-except:
-    raise RuntimeError('Please install skosify first')
 
 from .adapter import Adapter
 
