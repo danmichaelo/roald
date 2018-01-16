@@ -74,8 +74,10 @@ class Marc21(Adapter):
         s = text_type(builder)
         return s.encode('utf-8')
 
-    def global_cn(self, value):
-        if self.created_by is None:
+    def global_cn(self, value, include_prefix=True):
+        if value.startswith('http://data.ub.uio.no/entity/'):
+            return 'REAL%s' % value[30:]
+        if include_prefix is False or self.created_by is None:
             return value
         else:
             return '({}){}'.format(self.created_by, value)
@@ -187,7 +189,7 @@ class Marc21(Adapter):
                 builder.leader(leader)
 
                 # 001 Control number
-                builder.controlfield(resource.get('id'), tag='001')
+                builder.controlfield(self.global_cn(resource.get('id'), False), tag='001')
 
                 # 003 MARC code for the agency whose system control number is contained in field 001 (Control Number).
                 if self.created_by is not None:
@@ -397,12 +399,12 @@ class Marc21(Adapter):
                     'KnuteTerm': '550',  # @TODO: ???
                     'Category': '550',
                 }
-                broader = copy.copy(resource.get('broader', []))
-                if self.include_memberships:
-                    broader += resource.get('memberOf', [])
-
                 if not resource.get('deprecated'):
                     # Only include relations for non-deprecated concepts
+
+                    broader = copy.copy(resource.get('broader', []))
+                    if self.include_memberships:
+                        broader += resource.get('memberOf', [])
 
                     for value in broader:
                         rel = resources.get(id=value)
