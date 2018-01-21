@@ -280,6 +280,9 @@ class Skos(Adapter):
         for x in resource.get('ddc', []):
             graph.add((uri, DCTERMS.DDC, Literal(x)))
 
+        for x in resource.get('msc', []):
+            graph.add((uri, LOCAL.MSC, Literal(x)))
+
         related = [resources.get(id=value) for value in resource.get('related', [])]
         for c in related:
             rel_uri = URIRef(self.vocabulary.uri(c['id']))
