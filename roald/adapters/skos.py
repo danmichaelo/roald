@@ -56,7 +56,8 @@ class Skos(Adapter):
         'include_narrower': False
     }
 
-    def __init__(self, vocabulary, include=None, mappings_from=None, add_same_as=None):
+    def __init__(self, vocabulary, include=None, mappings_from=None, add_same_as=None,
+                 with_ccmapper_candidates=False):
         """
             - vocabulary : Vocabulary object
             - include : List of files to include
@@ -76,6 +77,7 @@ class Skos(Adapter):
             self.add_same_as = []
         else:
             self.add_same_as = add_same_as
+        self.with_ccmapper_candidates = with_ccmapper_candidates
 
     def load(self, filename):
         """
@@ -158,7 +160,8 @@ class Skos(Adapter):
 
         lg0 = len(graph)
         for resource in self.vocabulary.resources:
-            self.convert_resource(graph, resource, self.vocabulary.resources, scheme_uri, self.vocabulary.default_language.alpha2, self.add_same_as)
+            self.convert_resource(graph, resource, self.vocabulary.resources, scheme_uri,
+                                  self.vocabulary.default_language.alpha2)
         logger.info(' - Added {} triples'.format(len(graph) - lg0))
 
         all_concepts = set([tr[0] for tr in graph.triples((None, RDF.type, SKOS.Concept))])
@@ -200,7 +203,7 @@ class Skos(Adapter):
                 out.append(y)
         return out
 
-    def convert_resource(self, graph, resource, resources, scheme_uri, default_language, add_same_as):
+    def convert_resource(self, graph, resource, resources, scheme_uri, default_language):
         uri = URIRef(self.vocabulary.uri(resource['id']))
 
         types = self.convert_types(resource.get('type', []))
@@ -266,9 +269,10 @@ class Skos(Adapter):
         if x is not None:
             graph.add((uri, LOCAL.elementSymbol, Literal(x)))
 
-        x = resource.get('ccmapperCandidates', 0)
-        if x is not None:
-            graph.add((uri, LOCAL.ccmapperCandidates, Literal(x, datatype=XSD.integer)))
+        if self.with_ccmapper_candidates:
+            x = resource.get('ccmapperCandidates', 0)
+            if x is not None:
+                graph.add((uri, LOCAL.ccmapperCandidates, Literal(x, datatype=XSD.integer)))
 
         for x in resource.get('libCode', []):
             graph.add((uri, LOCAL.libCode, Literal(x)))
@@ -336,7 +340,7 @@ class Skos(Adapter):
                     graph.add((component_uri, SKOS.narrower, uri))
                     graph.add((component_uri, LOCAL.compound, uri))
 
-        for same_as in add_same_as:
+        for same_as in self.add_same_as:
             graph.add((uri, OWL.sameAs, URIRef(same_as.format(id=resource['id']))))
 
     def skosify_process(self, graph):
