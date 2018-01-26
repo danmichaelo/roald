@@ -50,6 +50,7 @@ class Skos(Adapter):
         'CompoundHeading': [SKOS.Concept, LOCAL.CompoundConcept],
         'VirtualCompoundHeading': [SKOS.Concept, LOCAL.VirtualCompoundConcept],
         'KnuteTerm': [SKOS.Concept, LOCAL.KnuteTerm],
+        'Class': [SKOS.Concept, LOCAL.Class],
     }
 
     options = {
@@ -57,7 +58,7 @@ class Skos(Adapter):
     }
 
     def __init__(self, vocabulary, include=None, mappings_from=None, add_same_as=None,
-                 with_ccmapper_candidates=False):
+                 with_ccmapper_candidates=False, infer=False):
         """
             - vocabulary : Vocabulary object
             - include : List of files to include
@@ -78,6 +79,7 @@ class Skos(Adapter):
         else:
             self.add_same_as = add_same_as
         self.with_ccmapper_candidates = with_ccmapper_candidates
+        self.infer = infer
 
     def load(self, filename):
         """
@@ -348,3 +350,24 @@ class Skos(Adapter):
         skosify.check.hierarchy_cycles(graph, True)
         skosify.check.disjoint_relations(graph, True)
         skosify.check.hierarchical_redundancy(graph, True)
+
+        if self.infer:
+            rules = [
+                # S40
+                (SKOS.closeMatch, RDFS.subPropertyOf, SKOS.mappingRelation),
+                (SKOS.broadMatch, RDFS.subPropertyOf, SKOS.mappingRelation),
+                (SKOS.narrowMatch, RDFS.subPropertyOf, SKOS.mappingRelation),
+                (SKOS.relatedMatch, RDFS.subPropertyOf, SKOS.mappingRelation),
+
+                # S42
+                (SKOS.exactMatch, RDFS.subPropertyOf, SKOS.closeMatch),
+            ]
+
+            for rule in rules:
+                graph.add(rule)
+
+
+            skosify.infer.rdfs_properties(graph)
+
+            for rule in rules:
+                graph.remove(rule)
