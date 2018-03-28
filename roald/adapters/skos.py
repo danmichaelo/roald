@@ -182,7 +182,7 @@ class Skos(Adapter):
         serializer = OrderedTurtleSerializer(graph)
 
         # These will appear first in the file and be ordered by URI
-        serializer.topClasses = [SKOS.ConceptScheme,
+        serializer.class_order = [SKOS.ConceptScheme,
                                  FOAF.Organization,
                                  SD.Service,
                                  SD.Dataset,
@@ -193,6 +193,12 @@ class Skos(Adapter):
                                  OWL.DatatypeProperty,
                                  SKOS.Collection,
                                  SKOS.Concept]
+
+        serializer.sorters_by_class = {
+            SKOS.Concept: [
+                ('.*?/[^0-9]*([0-9.]+)$', lambda x: float(x[0])),
+            ]
+        }
 
         stream = BytesIO()
         serializer.serialize(stream)
