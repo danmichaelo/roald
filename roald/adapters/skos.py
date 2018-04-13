@@ -47,8 +47,8 @@ class Skos(Adapter):
         'Geographic': [SKOS.Concept, LOCAL.Place],
         'GenreForm': [SKOS.Concept, LOCAL.GenreForm],
         'Temporal': [SKOS.Concept, LOCAL.Time],
-        'CompoundHeading': [SKOS.Concept, LOCAL.CompoundConcept],
-        'VirtualCompoundHeading': [SKOS.Concept, LOCAL.VirtualCompoundConcept],
+        'CompoundHeading': [SKOS.Concept, LOCAL.ComplexConcept],
+        'VirtualCompoundHeading': [SKOS.Concept, LOCAL.VirtualComplexConcept],
         'KnuteTerm': [SKOS.Concept, LOCAL.KnuteTerm],
         'Class': [SKOS.Concept, LOCAL.Class],
     }
