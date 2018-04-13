@@ -366,7 +366,7 @@ class Skos(Adapter):
                 (SKOS.relatedMatch, RDFS.subPropertyOf, SKOS.mappingRelation),
 
                 # S42
-                (SKOS.exactMatch, RDFS.subPropertyOf, SKOS.closeMatch),
+                # (SKOS.exactMatch, RDFS.subPropertyOf, SKOS.closeMatch),
             ]
 
             for rule in rules:
