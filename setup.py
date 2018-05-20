@@ -21,11 +21,11 @@ setup(name='roald',
                         'iso-639',
                         'otsrdflib>=0.5.0',
                         'six',
-                        'skosify==2.0.2.dev2',
+                        'skosify>=2.0.2.dev3',
                         ],
       dependency_links=[
         'https://github.com/danmichaelo/xmlwitch/tarball/0.3.0#egg=xmlwitch-0.3.0',
-        'https://github.com/danmichaelo/Skosify/tarball/patch-mappings#egg=skosify-2.0.2.dev2'
+        'https://github.com/NatLibFi/Skosify/tarball/master#egg=skosify-2.0.2.dev3'
       ],
       classifiers=[
         'Programming Language :: Python :: 2.7',
