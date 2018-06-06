@@ -360,6 +360,7 @@ class Skos(Adapter):
         if self.infer:
             rules = [
                 # S40
+                (SKOS.exactMatch, RDFS.subPropertyOf, SKOS.mappingRelation),
                 (SKOS.closeMatch, RDFS.subPropertyOf, SKOS.mappingRelation),
                 (SKOS.broadMatch, RDFS.subPropertyOf, SKOS.mappingRelation),
                 (SKOS.narrowMatch, RDFS.subPropertyOf, SKOS.mappingRelation),
