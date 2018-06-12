@@ -23,3 +23,6 @@ class Adapter(object):
             graph.add(tr)
 
         return graph
+
+    def prepare(self):
+        return {}

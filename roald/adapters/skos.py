@@ -4,6 +4,7 @@ import isodate
 from rdflib.graph import Graph, Literal
 from rdflib.namespace import Namespace, URIRef, OWL, RDF, DC, DCTERMS, FOAF, XSD, SKOS, RDFS
 from rdflib.collection import Collection
+from rdflib.plugins.serializers.nt import NTSerializer
 from otsrdflib import OrderedTurtleSerializer
 from six import binary_type
 from datetime import datetime
@@ -140,8 +141,7 @@ class Skos(Adapter):
 
         logger.info('Loaded %d mappings and %d category memberships from %s', n_mappings, n_memberships, filename)
 
-    def serialize(self):
-
+    def prepare(self):
         logger.info('Building RDF graph')
 
         graph = Graph()
@@ -177,28 +177,37 @@ class Skos(Adapter):
 
         logger.info('Skosify...')
         self.skosify_process(graph)
+        return {'graph': graph}
 
-        logger.info('Serializing RDF graph')
-        serializer = OrderedTurtleSerializer(graph)
+    def serialize(self, graph, format='turtle'):
+        logger.info('Serializing RDF graph as %s' % format)
 
-        # These will appear first in the file and be ordered by URI
-        serializer.class_order = [SKOS.ConceptScheme,
-                                 FOAF.Organization,
-                                 SD.Service,
-                                 SD.Dataset,
-                                 SD.Graph,
-                                 SD.NamedGraph,
-                                 OWL.Ontology,
-                                 OWL.Class,
-                                 OWL.DatatypeProperty,
-                                 SKOS.Collection,
-                                 SKOS.Concept]
+        if format == 'nt':
+            serializer = NTSerializer(graph)
 
-        serializer.sorters_by_class = {
-            SKOS.Concept: [
-                ('.*?/[^0-9]*([0-9.]+)$', lambda x: float(x[0])),
-            ]
-        }
+        elif format == 'turtle':
+            serializer = OrderedTurtleSerializer(graph)
+
+            # These will appear first in the file and be ordered by URI
+            serializer.class_order = [SKOS.ConceptScheme,
+                                     FOAF.Organization,
+                                     SD.Service,
+                                     SD.Dataset,
+                                     SD.Graph,
+                                     SD.NamedGraph,
+                                     OWL.Ontology,
+                                     OWL.Class,
+                                     OWL.DatatypeProperty,
+                                     SKOS.Collection,
+                                     SKOS.Concept]
+
+            serializer.sorters_by_class = {
+                SKOS.Concept: [
+                    ('.*?/[^0-9]*([0-9.]+)$', lambda x: float(x[0])),
+                ]
+            }
+        else:
+            raise ValueError('Unknown format %s' % format)
 
         stream = BytesIO()
         serializer.serialize(stream)

@@ -12,6 +12,7 @@ from .adapters import Roald3
 from .adapters import Marc21
 from .adapters import Skos
 from .models import Vocabulary
+from .export import PreparedExport
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ class Roald(object):
 
         logger.info('Saved {} resources to {}'.format(len(self.vocabulary.resources), filename))
 
-    def export(self, filename, format, **kwargs):
+    def prepare_export(self, format, **kwargs):
         if format == 'marc21':
             logger.info('Preparing MARC21 export')
             model = Marc21(self.vocabulary, **kwargs)
@@ -81,12 +82,11 @@ class Roald(object):
             model = Skos(self.vocabulary, **kwargs)
         else:
             raise Exception('Unknown format')
+        return PreparedExport(model)
 
-        filename = os.path.expanduser(filename)
-        with open(filename, 'wb') as f:
-            f.write(model.serialize())
-        logger.info('Export to {} complete'.format(filename))
-
+    def export(self, filename, format, **kwargs):
+        prepared = self.prepare_export(format, **kwargs)
+        prepared.write(filename)
 
     def authorize(self, value):
         # <value> can take a compound heading value like "$a Component1 $x Component2 $x Component3"
