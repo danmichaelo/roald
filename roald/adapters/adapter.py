@@ -16,7 +16,7 @@ class Adapter(object):
             graph = Graph()
         tmp.load(filename, format=self.extFromFilename(filename))
 
-        skosify.infer.symmetric_mappings(tmp)
+        skosify.infer.skos_symmetric_mappings(tmp)
 
         for tr in tmp.triples_choices((None, [SKOS.exactMatch, SKOS.closeMatch, SKOS.broadMatch, SKOS.narrowMatch, SKOS.relatedMatch], None)):
             #if tr[0] in all_concepts:
