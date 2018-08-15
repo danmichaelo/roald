@@ -275,7 +275,7 @@ class Skos(Adapter):
         x = resource.get('deprecated')
         if x is not None:
             graph.add((uri, OWL.deprecated, Literal(True)))
-            graph.add((uri, SKOS.historyNote, Literal('Deprecated on {}'.format(x))))
+            graph.add((uri, SKOS.historyNote, Literal('Deprecated on {}'.format(x), lang='en')))
             graph.add((uri, DCTERMS.modified, Literal(x, datatype=XSD.dateTime)))
         else:
             x = resource.get('modified', resource.get('created'))
