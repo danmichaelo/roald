@@ -304,75 +304,68 @@ MARC21-serialisering
 
 ### Informasjon om felt som benyttes
 
-* **Leader**: settes til en fast verdi `00000nz  a2200000n  4500` for alle poster.
+* **Leader**:
+  * Posisjon 6 har en av følgende verdier:
+    * `n`: vanlig post
+    * `x`: erstattet av en annen post
+    * `s`: erstattet av mer enn én post
+    * `d`: slettet
 
 * **001 og 003** Control number and agency
 
-  * Kontrollnummeret i 001 er på formen `REAL[0-9]{6}`, eks.: `REAL009035`.
-  * Organisasjonskoden i 003 settes alltid til `NoOU`, Universitet i Oslos kode fra
-    "[MARC Code List for Organizations](http://www.loc.gov/marc/organizations/org-search.php)".
-    Det kan tenkes at vi må endre denne til BIBYS-koden `NO-TrBIB`.
+  * Kontrollnummeret i 001 er en lokal identifikator på formen `REAL[0-9]{6}`, eks.: `REAL009035`.
+  * Organisasjonskoden i 003 settes alltid til `No-TrBIB`
+    (se "[MARC Code List for Organizations](http://www.loc.gov/marc/organizations/org-search.php)").
+    Opprinnelig brukte vi `NoOU`, som vi egentlig mener er mer riktig, men dette førte til krøll i Alma.
   * Kontrollnummeret og organisasjonskoden utgjør til sammen en globalt unik
     identifikator som brukes for å henvise til autoritetsposten.
-    Eks.: `(NoOU)REAL009035`.
+    Eks.: `(No-TrBIB)REAL009035`.
 
 * **005** Date and Time of Latest Transaction
-  * Dato for siste endring.
+  * Tidspunkt for siste endring.
 
 * **008** Fixed-Length Data Elements
-  * De første 6 tegnene brukes til opprettelsesdato for posten.
-  * Resten fylles ut med en fast verdi `|||a|z||||||          || a||     d`.
+  * De første 6 posisjonene brukes til opprettelsesdato for posten.
+  * Posisjon 9 er "a" for vanlige begreper eller "e" for fasetter (*node labels*).
+  * Posisjon 14 er alltid "b" (autoritetsposten *kan ikke* brukes i 1XX eller 7XX-felt)
+  * Posisjon 15 er "a" (autoritetsposten *kan* brukes i 6XX-felt) for vanlige begreper
+    og "b" (kan *ikke* brukes) for knutetermer og fasetter.
 
 * **024** Other Standard Identifier
-  * Her legges postens URI (eks.: `http://data.ub.uio.no/realfagstermer/c010856`)
+  * Postens URI (eks.: `http://data.ub.uio.no/realfagstermer/c010856`) med `$2 uri`
 
 * **035** System Control Number
   * Kan brukes til å legge inn ID til posten i andre systemer, f.eks. BARE.
   * *Brukes foreløpig ikke*.
 
 * **040** Cataloging Source
-  * Settes foreløpig til `040 ## $a NoOU $b nob $f noubomn` for alle poster.
-  * Språk er litt kilent, siden vi *egentlig* har flerspråklige autoritetsposter.
+  * `$a No-TrBIB`
+  * `$b nob`: Språkkode for posten. MARC-poster er dessverre énspråklige. For Realfagstermer, som er flerspråklig, oppgir vi "nob" siden det er bokmålstermen vi setter på katalogpostene.
     Vi kan evt. opprette én henvisningspost per språk, men da må vi også generere ID-er for disse.
+  * `$f {vokabularkode}`: Verdien fra LCs [Subject Heading and Term Source Codes](https://www.loc.gov/standards/sourcelist/subject.html), f.eks. "humord" for Humord, "noubomn" for Realfagstermer.
 
 * **065** Other Classification Number
-  * Fylles ut med MSC-nummer der det finnes.
-  * `$2 msc` fra [Classification Scheme Source Codes](http://www.loc.gov/standards/sourcelist/classification.html).
-    Merk: Ingen måte å skille mellom ulike utgaver på!
+  * Fylles ut med MSC-nummer der det finnes. Med `$2 msc` fra [Classification Scheme Source Codes](http://www.loc.gov/standards/sourcelist/classification.html). Merk: MARC gir ingen måte å skille mellom ulike utgaver på – dette er en svakhet i 065!
 
 * **083** Dewey Decimal Classification Number
-  * Fylles ut med DDC-nummer der det finnes.
-  * Utgave (`$2`) spesifiseres foreløpig ikke, fordi dette ikke er spesifisert i Roald.
+  * `$a`: Tilmappet Dewey-nummer
+  * `$c`: Relasjonstype for mappingen (`=EQ`, `~EQ`, `BM`, `NM` eller `RM`)
+  * `$2`: Utgave (23)
 
 * **148/150/151/155** Authorized Heading
-  * Her legges den foretrukne termen på norsk bokmål.
-  * MARC-kode velges basert på posttype.
+  * Foretrukket term på indeksspråket (norsk bokmål for de fleste av vokabularene).
   * Delfelt `$x` benyttes for strenger.
 
 * **448/450/451/455** See From Tracings
-  * Her legges ikke-foretrukne termer.
-  * MARC-kode velges basert på posttype.
-  * Uavklart: Skal vi også legge inn termer (foretrukne og ikke-foretrukne)
-    på nynorsk, engelsk og latin her??
+  * Her legges ikke-foretrukne termer, samt foretrukne termer på andre språk. For å skille mellom disse bruker vi `$9 rank=preferred` og `$9 rank=alternative`, samt `$9 language={språkkode}`. Ikke helt ideelt.
 
 * **548/550/551/555** See Also From Tracings
-  * Her legges se også-henvisninger og hierarkiske relasjoner (`$w g`).
-  * MARC-kode velges basert på posttypen til den henvisende posten.
+  * Hierarkiske relasjoner har `$w g` (overordnet) eller `$w h` (underordnet). Se [LC-dokumentasjon](http://www.loc.gov/marc/authority/adtracing.html). Se også-hevnisninger har ingen `$w`.
+  * Merk: Begrepene i Realfagstermer er knyttet til ett eller flere fagområder. I MARC-serialiseringen
+    er dette kodet med `55X` med `$w g`, som ikke er helt ideelt. I SKOS er det kodet som `SKOS.member`.
 
 * **680** Public General Note
-  * Her legges noter.
+  * Noter og definisjoner.
 
-Ordliste
---------
-
--   **Begrep** (Concept / Begriff): “kunnskapsenhet som
-    er dannet gjennom en unik kombinasjon av kjennetegn” (TTN/I-term).
-    Begrep representeres gjennom betegnelser (designations): enten
-    termer (for allmennbegreper), egennavn (individualbegrep) eller
-    symboler. Ref:
-    http://www.sprakradet.no/globalassets/sprakarbeid/terminologi/nordterm—terminologiens-terminologi—no-en—2011-01-27.pdf
-
--   **Emne** (Subject): hva eller hvem et dokument handler om
-
--   **Deskriptor** eller **indeksterm**: Unik term som påføres katalogpost
-    ved indeksering.
+* **748/750/751/755** Heading Linking Entries
+  * Mappinger til andre vokabularer (bortsett fra Dewey, som havner i 083)
