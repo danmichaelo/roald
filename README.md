@@ -343,29 +343,37 @@ MARC21-serialisering
   * `$b nob`: Språkkode for posten. MARC-poster er dessverre énspråklige. For Realfagstermer, som er flerspråklig, oppgir vi "nob" siden det er bokmålstermen vi setter på katalogpostene.
     Vi kan evt. opprette én henvisningspost per språk, men da må vi også generere ID-er for disse.
   * `$f {vokabularkode}`: Verdien fra LCs [Subject Heading and Term Source Codes](https://www.loc.gov/standards/sourcelist/subject.html), f.eks. "humord" for Humord, "noubomn" for Realfagstermer.
+  * Eksempel: `040 ## $a NO-TrBIB $b nob $f noubomn`
 
 * **065** Other Classification Number
   * Fylles ut med MSC-nummer der det finnes. Med `$2 msc` fra [Classification Scheme Source Codes](http://www.loc.gov/standards/sourcelist/classification.html). Merk: MARC gir ingen måte å skille mellom ulike utgaver på – dette er en svakhet i 065!
+  * Eksempel: `065 ## $a 81 $2 msc`
 
 * **083** Dewey Decimal Classification Number
   * `$a`: Tilmappet Dewey-nummer
   * `$c`: Relasjonstype for mappingen (`=EQ`, `~EQ`, `BM`, `NM` eller `RM`)
-  * `$2`: Utgave (23)
+  * `$2`: Utgave (23/nor)
+  * Eksempel: `083 0# $a 541.37 $c BM $2 23/nor`
 
 * **148/150/151/155** Authorized Heading
   * Foretrukket term på indeksspråket (norsk bokmål for de fleste av vokabularene).
   * Delfelt `$x` benyttes for strenger.
+  * Eksempel: `150 ## $a Krepsdyrskall $9 rank=preferred $9 language=nb` (foretrukket term bokmål, `$9 er egentlig unødvendig her, men tas med for kompletthets skyld, se under.)
 
 * **448/450/451/455** See From Tracings
   * Her legges ikke-foretrukne termer, samt foretrukne termer på andre språk. For å skille mellom disse bruker vi `$9 rank=preferred` og `$9 rank=alternative`, samt `$9 language={språkkode}`. Ikke helt ideelt.
+  * Eksempel: `450 ## $a Krepsdyrskal $9 rank=preferred $9 language=nn` (foretrukket term på nynorsk)
 
 * **548/550/551/555** See Also From Tracings
   * Hierarkiske relasjoner har `$w g` (overordnet) eller `$w h` (underordnet). Se [LC-dokumentasjon](http://www.loc.gov/marc/authority/adtracing.html). Se også-hevnisninger har ingen `$w`.
   * Merk: Begrepene i Realfagstermer er knyttet til ett eller flere fagområder. I MARC-serialiseringen
     er dette kodet med `55X` med `$w g`, som ikke er helt ideelt. I SKOS er det kodet som `SKOS.member`.
+  * Eksempel: `550 ## $a Digital humaniora $w h $0 (No-TrBIB)HUME27908`
 
 * **680** Public General Note
   * Noter og definisjoner.
+  * Eksempel: `680 ## $i Programmeringsspråk` 
 
 * **748/750/751/755** Heading Linking Entries
   * Mappinger til andre vokabularer (bortsett fra Dewey, som havner i 083)
+  * Eksempel: `750 #4 $0 http://www.wikidata.org/entity/Q220457 $4 ~EQ`
