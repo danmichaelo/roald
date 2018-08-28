@@ -1,10 +1,9 @@
-Roald III backend - en begynnelse
----------------------------------
+Konverteringsscript for data.ub
+---
 
-Python-pakke som foreløpig tar seg av konvertering av data. Pakken
-importerer data (fra Roald 2 og Bibsys) og eksporterer (som MARC21XML og RDF/SKOS).
+Konverterer fra Roald 2, Bibsys, MESH-XML til Marc21XML og RDF/SKOS.
 
-For å installere:
+For å installere pakken:
 
 ``` {.bash}
 pip install -U --process-dependency-links -e .
@@ -86,8 +85,7 @@ tilfeldige = [terms[x]['value'] for x in np.random.randint(0, len(termer), 10)]
 
 ```
 
-
-Datamodell (KLADD)
+Intern datamodell
 ------------------
 
 Et vokabular (`Vocabulary`) har et sett av ressurser (`Resource`).
@@ -279,7 +277,12 @@ Dette kan presenteres som `Interstellar materie (ISM)`.
 RDF-serialisering
 -----------------
 
-TODO
+Baserer seg i hovedsak på [SKOS](http://www.w3.org/TR/skos-reference). I tillegg bruker vi
+* `owl:deprecated` for å markere at begreper har blitt tatt ut av bruk.
+* `dcterms:isReplacedBy` for å markere at et begrep har blitt erstattet av et annet.
+* `dcterms:identifier` for lokal identifikator (ikke URI).
+* `isothes:subordinateArray` og `isothes:superOrdinate` fra [iso25964](http://pub.tenforce.com/schemas/iso25964/skos-thes)-utvidelsen.
+* [et par lokale tillegg](https://github.com/realfagstermer/realfagstermer/blob/master/src/ub-onto.ttl)
 
 MARC21-serialisering
 --------------------
