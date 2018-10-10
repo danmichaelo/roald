@@ -146,10 +146,18 @@ class Bibsys(object):
 
         if record.find('se-id') is not None:
             se_id = record.find('se-id').text
+            label_val = self.get_label(record)
             try:
-                resources[ids[se_id]].add('altLabel.{}'.format(language), Label(self.get_label(record)))
+                other_res = resources[ids[se_id]]
+                if label_val.endswith('[eng1]'):
+                    other_res.set('preflabel.en', Label(label_val))
+                elif label_val.endswith('[eng]'):
+                    label_val = label_val[:-5].rstrip()
+                    other_res.add('altLabel.en', Label(label_val))
+                else:
+                    other_res.add('altLabel.{}'.format(language), Label(label_val))
             except KeyError:
-                logger.warn('Cannot add "%s" as an alternative term to %s because the latter doesn\'t exist as a concept (it might be a term though)', self.get_label(record), se_id)
+                logger.warn('Cannot add "%s" as an alternative term to %s because the latter doesn\'t exist as a concept (it might be a term though)', label_val, se_id)
             return
 
         resource = resources[ids[tid]]
