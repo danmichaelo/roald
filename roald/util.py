@@ -1,4 +1,8 @@
+import logging
 import json
+
+logger = logging.getLogger(__name__)
+
 
 def array_set(arr, key, value, overwrite=True):
     # Set the value of a multidimensional array element using dot notation
@@ -14,7 +18,8 @@ def array_set(arr, key, value, overwrite=True):
             arr[k] = {}
         if len(key) == 0:
             if arr[k] != {} and not overwrite:
-                raise RuntimeError('Key "{}" defined more than once for the resource: {}'.format(origkey, str(arr)))
+                logger.warn('Could not set {}="{}" because another value already exists: "{}"'.format(origkey, str(value), str(arr)))
+                return
             arr[k] = value
         arr = arr[k]
 

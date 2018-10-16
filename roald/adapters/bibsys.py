@@ -150,7 +150,8 @@ class Bibsys(object):
             try:
                 other_res = resources[ids[se_id]]
                 if label_val.endswith('[eng1]'):
-                    other_res.set('preflabel.en', Label(label_val))
+                    label_val = label_val[:-6].rstrip()
+                    other_res.set('prefLabel.en', Label(label_val))
                 elif label_val.endswith('[eng]'):
                     label_val = label_val[:-5].rstrip()
                     other_res.add('altLabel.en', Label(label_val))
