@@ -139,6 +139,17 @@ class Skos(Adapter):
                 except KeyError:
                     logger.warning('Concept not found: %s', res_id)
 
+        # Load ccmapper mapping state
+        for tr in graph.triples((None, LOCAL.ccmapperState, None)):
+            source_concept = tr[0]
+            res_id = self.vocabulary.id_from_uri(source_concept)
+            if res_id is not None:
+                shortName = str(tr[1]).split('#')[1]
+                try:
+                    self.vocabulary.resources[res_id].set('ccmapperState', tr[2])
+                except KeyError:
+                    logger.warning('Concept not found: %s', res_id)
+
         logger.info('Loaded %d mappings and %d category memberships from %s', n_mappings, n_memberships, filename)
 
     def prepare(self):
@@ -287,9 +298,12 @@ class Skos(Adapter):
             graph.add((uri, LOCAL.elementSymbol, Literal(x)))
 
         if self.with_ccmapper_candidates:
-            x = resource.get('ccmapperCandidates', 0)
+            x = resource.get('ccmapperCandidates')
             if x is not None:
                 graph.add((uri, LOCAL.ccmapperCandidates, Literal(x, datatype=XSD.integer)))
+            x = resource.get('ccmapperState')
+            if x is not None:
+                graph.add((uri, LOCAL.ccmapperState, Literal(x)))
 
         for x in resource.get('libCode', []):
             graph.add((uri, LOCAL.libCode, Literal(x)))
