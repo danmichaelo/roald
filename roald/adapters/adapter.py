@@ -6,6 +6,8 @@ import skosify
 class Adapter(object):
 
     def extFromFilename(self, fn):
+        if fn.endswith('.nt'):
+            return 'nt'
         if fn.endswith('.ttl'):
             return 'turtle'
         return 'xml'
