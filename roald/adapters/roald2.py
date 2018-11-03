@@ -139,7 +139,7 @@ class Roald2(object):
                 elif key in ['en', 'nb', 'nn', 'la']:
                     if key not in concept.get('prefLabel'):
                         concept.set('prefLabel.{key}'.format(key=key), Label(value))
-                    else:
+                    elif concept.get('prefLabel.{key}'.format(key=key)).value != value:
                         concept.add('altLabel.{key}'.format(key=key), Label(value))
 
                 elif key == 'ak':
