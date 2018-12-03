@@ -149,11 +149,11 @@ class Bibsys(object):
             label_val = self.get_label(record)
             try:
                 other_res = resources[ids[se_id]]
-                if label_val.endswith('[eng1]'):
-                    label_val = label_val[:-6].rstrip()
+                if label_val.find(' [eng1]') != -1:
+                    label_val = label_val.replace(' [eng1]', '')
                     other_res.set('prefLabel.en', Label(label_val))
-                elif label_val.endswith('[eng]'):
-                    label_val = label_val[:-5].rstrip()
+                elif label_val.find(' [eng]') != -1:
+                    label_val = label_val.replace(' [eng]', '')
                     other_res.add('altLabel.en', Label(label_val))
                 else:
                     other_res.add('altLabel.{}'.format(language), Label(label_val))
