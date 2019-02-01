@@ -73,12 +73,22 @@ class Bibsys(object):
             return
 
         ident = record.find('term-id').text
+        if record.find('type') is not None:
+            record_type = record.find('type').text.upper()
+        else:
+            record_type = 'Topic'
 
-        if record.find('type') is not None and record.find('type').text == 'F':
+        if record_type == 'F':
             obj = Collection()
 
-        elif record.find('type') is not None and record.find('type').text == 'K':
+        elif record_type == 'K':
             obj = Concept('KnuteTerm')
+
+        elif record_type == 'T':
+            obj = Concept('Temporal')
+
+        elif record_type == 'G':
+            obj = Concept('Geographic')
 
         else:
             obj = Concept(conceptType)
