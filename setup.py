@@ -21,7 +21,7 @@ setup(name='roald',
                         'iso-639',
                         'otsrdflib>=0.5.0',
                         'six',
-                        'skosify',
+                        'skosify @ git+https://github.com/NatLibFi/Skosify.git@master#egg=skosify-2.0.2',
                         'xmlwitch @ git+https://github.com/danmichaelo/xmlwitch.git@0.3.0#egg=xmlwitch-0.3.0',
                         ],
       classifiers=[
