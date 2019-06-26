@@ -21,12 +21,9 @@ setup(name='roald',
                         'iso-639',
                         'otsrdflib>=0.5.0',
                         'six',
-                        'skosify>=2.0.2.dev3',
+                        'skosify',
+                        'xmlwitch @ git+https://github.com/danmichaelo/xmlwitch.git@0.3.0#egg=xmlwitch-0.3.0',
                         ],
-      dependency_links=[
-        'https://github.com/danmichaelo/xmlwitch/tarball/0.3.0#egg=xmlwitch-0.3.0',
-        'https://github.com/NatLibFi/Skosify/tarball/master#egg=skosify-2.0.2.dev3'
-      ],
       classifiers=[
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
