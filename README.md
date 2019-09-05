@@ -6,7 +6,7 @@ Konverterer fra Roald 2, Bibsys, MESH-XML til Marc21XML og RDF/SKOS.
 For å installere pakken:
 
 ``` {.bash}
-pip install -U --process-dependency-links -e .
+pip install -U -e .
 ```
 
 For å kjøre tester:
