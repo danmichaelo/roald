@@ -3,6 +3,7 @@ import isodate
 import xmlwitch
 import iso639
 import copy
+import json
 import logging
 from six import text_type
 from rdflib import URIRef
@@ -296,6 +297,17 @@ class Marc21(Adapter):
                         builder.subfield(ma['relation'], code='c')
                         builder.subfield('23', code='2')
 
+                out_terms = []
+                def add_term(out_term):
+                    tag=out_term.pop(0)  # ignore tag when comparing as we can have the same term in 1xx and 4xx
+                    out_term_s = json.dumps(out_term)
+                    if out_term_s in out_terms:
+                        return
+                    out_terms.append(out_term_s)
+                    with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                        for sf in out_term:
+                            builder.subfield(sf[1], code=sf[0])
+
                 # 148/150/151/155 Authorized heading
                 if resourceType == 'CompoundHeading':
 
@@ -315,31 +327,33 @@ class Marc21(Adapter):
                         if True in vals:
                             continue
 
-                        with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                        sf_a = first_component.prefLabel[lang]
 
-                            # Add the first component. Always use subfield $a. Correct???
-                            term = first_component.prefLabel[lang]
-                            builder.subfield(term.value, code='a')
+                        out_term = [
+                            tag,
+                            ['a', sf_a.value],
+                        ]
 
-                            # Add remaining components
-                            for value in resource.get('component')[1:]:
-                                component = resources.get(id=value)
+                        for value in resource.get('component')[1:]:
+                            component = resources.get(id=value)
 
-                                # Determine subfield code from type:
-                                sf = {
-                                    'Topic': 'x',
-                                    'Temporal': 'y',
-                                    'Geographic': 'z',
-                                    'GenreForm': 'v',
-                                }[component['type'][0]]
+                            # Determine subfield code from type:
+                            sf = {
+                                'Topic': 'x',
+                                'Temporal': 'y',
+                                'Geographic': 'z',
+                                'GenreForm': 'v',
+                            }[component['type'][0]]
 
-                                # OBS! 150 har også $b.. Men når brukes egentlig den??
-                                term = component.prefLabel[lang]
-                                builder.subfield(term.value, code=sf)
+                            # OBS! 150 har også $b.. Men når brukes egentlig den??
+                            sf_term = component.prefLabel[lang]
+                            out_term.append([sf, sf_term.value])
 
                             if self.include_extras:
-                                builder.subfield('rank=preferred', code='9')
-                                builder.subfield('language=' + lang, code='9')
+                                out_term.append(['9', 'rank=preferred'])
+                                out_term.append(['9', 'language=' + lang])
+
+                        add_term(out_term)
 
 
                 else:  # Not a compound heading
@@ -350,33 +364,38 @@ class Marc21(Adapter):
                         else:
                             tag = self.tag_from_type(400, resourceType)
 
-                        # Always use subfield $a. Correct???
-                        with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                            builder.subfield(term.value, code='a')
-                            if self.include_extras:
-                                builder.subfield('rank=preferred', code='9')
-                                builder.subfield('language=' + lang, code='9')
+                        out_term = [
+                            tag,
+                            ['a', term.value],
+                        ]
+                        if self.include_extras:
+                            out_term.append(['9', 'rank=preferred'])
+                            out_term.append(['9', 'language=' + lang])
+                        add_term(out_term)
 
                         # Atm. acronyms only for primary language
-                        if lang == self.language.alpha2:
-                            self.add_acronyms(builder, term, resourceType)
+                        # if lang == self.language.alpha2:
+                        #     self.add_acronyms(builder, term, resourceType)
 
                     # Add 448/450/451/455 See from tracings
                     for lang, terms in resource.get('altLabel', {}).items():
                         tag = self.tag_from_type(400, resourceType)
                         for term in terms:
+                            out_term = [
+                                tag,
+                                # Always use subfield $a. Correct???
+                                ['a', term.value],
+                            ]
                             term_value = term.value
 
-                            with builder.datafield(tag=tag, ind1=' ', ind2=' '):
-                                # Always use subfield $a. Correct???
-                                builder.subfield(term_value, code='a')
-                                if self.include_extras:
-                                    builder.subfield('rank=alternative', code='9')
-                                    builder.subfield('language=' + lang, code='9')
+                            if self.include_extras:
+                                out_term.append(['9', 'rank=alternative'])
+                                out_term.append(['9', 'language=' + lang])
+                            add_term(out_term)
 
                             # Atm. acronyms only for primary language
-                            if lang == self.language.alpha2:
-                                self.add_acronyms(builder, term, resourceType)
+                            # if lang == self.language.alpha2:
+                            #    self.add_acronyms(builder, term, resourceType)
 
                 # 548/550/551/555 See also
                 tags = {
