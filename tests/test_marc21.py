@@ -28,34 +28,34 @@ class TestConverter(unittest.TestCase):
         with pytest.raises(RuntimeError):
             m21.serialize()
 
-    def test_acronym(self):
-        # Expects acronym to be converted to 450 $a, having $g d
-        voc = Vocabulary()
-        voc.resources.load([
-            {
-                'id': '1',
-                'prefLabel': {'nb': {
-                    'value': 'Forente nasjoner',
-                    'hasAcronym': 'FN'
-                }},
-                'type': ['Topic']
-            }
-        ])
-        voc.default_language = languages.get(alpha2='nb')
-        m21 = Marc21(voc)
-        tree = etree.parse(BytesIO(m21.serialize()))
+    # def test_acronym(self):
+    #     # Expects acronym to be converted to 450 $a, having $g d
+    #     voc = Vocabulary()
+    #     voc.resources.load([
+    #         {
+    #             'id': '1',
+    #             'prefLabel': {'nb': {
+    #                 'value': 'Forente nasjoner',
+    #                 'hasAcronym': 'FN'
+    #             }},
+    #             'type': ['Topic']
+    #         }
+    #     ])
+    #     voc.default_language = languages.get(alpha2='nb')
+    #     m21 = Marc21(voc)
+    #     tree = etree.parse(BytesIO(m21.serialize()))
 
-        f150 = tree.xpath('//m:record/m:datafield[@tag="150"]' +
-                          '[./m:subfield[@code="a"]/text() = "Forente nasjoner"]',
-                          namespaces={'m': 'http://www.loc.gov/MARC21/slim'})
+    #     f150 = tree.xpath('//m:record/m:datafield[@tag="150"]' +
+    #                       '[./m:subfield[@code="a"]/text() = "Forente nasjoner"]',
+    #                       namespaces={'m': 'http://www.loc.gov/MARC21/slim'})
 
-        f450 = tree.xpath('//m:record/m:datafield[@tag="450"]' +
-                          '[./m:subfield[@code="a"]/text() = "FN"]' +
-                          '[./m:subfield[@code="g"]/text() = "d"]',
-                          namespaces={'m': 'http://www.loc.gov/MARC21/slim'})
+    #     f450 = tree.xpath('//m:record/m:datafield[@tag="450"]' +
+    #                       '[./m:subfield[@code="a"]/text() = "FN"]' +
+    #                       '[./m:subfield[@code="g"]/text() = "d"]',
+    #                       namespaces={'m': 'http://www.loc.gov/MARC21/slim'})
 
-        self.assertEqual(1, len(f150))
-        self.assertEqual(1, len(f450))
+    #     self.assertEqual(1, len(f150))
+    #     self.assertEqual(1, len(f450))
 
     def test_load(self):
         # Should accept a Vocabulary object
