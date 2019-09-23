@@ -68,9 +68,7 @@ class Bibsys(object):
             return
 
         if record.find('gen-se-henvisning') is not None:
-            # @TODO: Need to figure out how to handle.
-            logger.warn(u'Ignoring gen-se-henvisning')
-            return
+            obj = Concept('SplitNonPreferredTerm')
 
         ident = record.find('term-id').text
         if record.find('type') is not None:
@@ -82,7 +80,7 @@ class Bibsys(object):
             obj = Collection()
 
         elif record_type == 'K':
-            obj = Concept('KnuteTerm')
+            obj = Concept('LinkingTerm')
 
         elif record_type == 'T':
             obj = Concept('Temporal')

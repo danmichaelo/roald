@@ -118,7 +118,8 @@ class Marc21(Adapter):
             'Topic': 50,
             'Geographic': 51,
             'GenreForm': 55,
-            'KnuteTerm': 50,  # Knutetermer
+            'LinkingTerm': 50,  # Knutetermer
+            'SplitNonPreferredTerm': 50,  # Generell se-henvisning
             'Collection': 50, # Fasettindikatorer
             'Category': 50,   # i realfagstermer
         }
@@ -204,7 +205,10 @@ class Marc21(Adapter):
                 f14 = 'b'  # Heading use-main or added entry (1XX or 7XX fields): Not appropriate
                 f15 = 'a'  # Heading use-subject added entry (6XX fields): Appropriate
 
-                if resourceType == 'KnuteTerm':
+                if resourceType == 'LinkingTerm':
+                    f15 = 'b'  # Not appropriate
+
+                if resourceType == 'SplitNonPreferredTerm':
                     f15 = 'b'  # Not appropriate
 
                 # Fasetter
@@ -403,7 +407,8 @@ class Marc21(Adapter):
                     'Topic': '550',
                     'Geographic': '551',
                     'GenreForm': '555',
-                    'KnuteTerm': '550',  # @TODO: ???
+                    'LinkingTerm': '550',  # @TODO: ???
+                    'SplitNonPreferredTerm': '550',  # @TODO: ???
                     'Category': '550',
                 }
                 if not resource.get('deprecated'):

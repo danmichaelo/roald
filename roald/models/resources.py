@@ -185,7 +185,17 @@ class Concept(Resource):
 
     def set_type(self, conceptType):
 
-        if conceptType not in ['Topic', 'Geographic', 'Temporal', 'GenreForm', 'CompoundHeading', 'VirtualCompoundHeading', 'KnuteTerm', 'Category']:
+        if conceptType not in [
+            'Topic',
+            'Geographic',
+            'Temporal',
+            'GenreForm',
+            'SplitNonPreferredTerm',
+            'CompoundHeading',
+            'VirtualCompoundHeading',
+            'LinkingTerm',
+            'Category'
+        ]:
             raise ValueError('Invalid concept type')
 
         conceptTypes = [conceptType]

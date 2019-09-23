@@ -45,12 +45,13 @@ class Skos(Adapter):
         'Group': [SKOS.Collection, ISOTHES.ConceptGroup],
         'Collection': [SKOS.Collection, ISOTHES.ThesaurusArray],
         'Topic': [SKOS.Concept, LOCAL.Topic],
-        'Geographic': [SKOS.Concept, LOCAL.Place],
+        'Geographic': [SKOS.Concept, LOCAL.Geographic],
         'GenreForm': [SKOS.Concept, LOCAL.GenreForm],
-        'Temporal': [SKOS.Concept, LOCAL.Time],
+        'Temporal': [SKOS.Concept, LOCAL.Temporal],
+        'SplitNonPreferredTerm': [SKOS.Concept, LOCAL.SplitNonPreferredTerm],
         'CompoundHeading': [SKOS.Concept, LOCAL.ComplexConcept],
         'VirtualCompoundHeading': [SKOS.Concept, LOCAL.VirtualComplexConcept],
-        'KnuteTerm': [SKOS.Concept, LOCAL.KnuteTerm],
+        'LinkingTerm': [SKOS.Concept, LOCAL.LinkingTerm],
         'Class': [SKOS.Concept, LOCAL.Class],
     }
 
