@@ -4,6 +4,11 @@ import json
 logger = logging.getLogger(__name__)
 
 
+class AlreadyExists(Exception):
+    """Base class for exceptions in this module."""
+    pass
+
+
 def array_set(arr, key, value, overwrite=True):
     # Set the value of a multidimensional array element using dot notation
     # print 'SET {}={}'.format(key, value)
@@ -18,8 +23,7 @@ def array_set(arr, key, value, overwrite=True):
             arr[k] = {}
         if len(key) == 0:
             if arr[k] != {} and not overwrite:
-                logger.warn('Could not set {}="{}" because another value already exists: "{}"'.format(origkey, str(value), str(arr)))
-                return
+                raise AlreadyExists('Could not set {}="{}" because another value already exists: "{}"'.format(origkey, str(value), str(arr)))
             arr[k] = value
         arr = arr[k]
 

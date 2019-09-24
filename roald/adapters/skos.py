@@ -325,6 +325,12 @@ class Skos(Adapter):
 
             graph.add((uri, SKOS.related, rel_uri))
 
+        related = [resources.get(id=value) for value in resource.get('plusUseTerm', [])]
+        for c in related:
+            rel_uri = URIRef(self.vocabulary.uri(c['id']))
+
+            graph.add((uri, LOCAL.plusUseTerm, rel_uri))
+
         replacedBy = [resources.get(id=value) for value in resource.get('replacedBy', [])]
         for c in replacedBy:
             rel_uri = URIRef(self.vocabulary.uri(c['id']))
@@ -383,6 +389,8 @@ class Skos(Adapter):
         skosify.check.hierarchy_cycles(graph, True)
         skosify.check.disjoint_relations(graph, True)
         skosify.check.hierarchical_redundancy(graph, True)
+        # skosify.check.preflabel_uniqueness(graph, 'shortest')
+        # skosify.check.label_overlap(graph, True)
 
         if self.infer:
             rules = [
