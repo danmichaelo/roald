@@ -20,6 +20,7 @@ lang3Map = {
     'nb': 'nob',
     'nn': 'nno',
     'en': 'eng',
+    'la': 'lat',
 }
 
 
@@ -213,9 +214,11 @@ class Marc21(Adapter):
                 f15 = 'a'  # Heading use-subject added entry (6XX fields): Appropriate
 
                 if resourceType == 'LinkingTerm':
+                    f09 = 'e'  # Node label ???
                     f15 = 'b'  # Not appropriate
 
                 if resourceType == 'SplitNonPreferredTerm':
+                    f09 = 'b'  # Untraced reference
                     f15 = 'b'  # Not appropriate
 
                 # Fasetter
