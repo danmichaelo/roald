@@ -16,6 +16,13 @@ from .adapter import Adapter
 logger = logging.getLogger(__name__)
 
 
+lang3Map = {
+    'nb': 'nob',
+    'nn': 'nno',
+    'en': 'eng',
+}
+
+
 class Marc21(Adapter):
     """
     MARC21 exporter
@@ -29,15 +36,15 @@ class Marc21(Adapter):
     modified_by = None  # Modifying agency 040 $d
     vocabulary_code = None  # Vocabulary code, 040 $f
     language = None  # Default language code for 040 $b
-    include_extras = False  # Whether to include $9 language and $9 rank codes
+    include_d9 = None  # Whether to include $9 language and $9 rank codes
 
-    def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, include_extras=False, include_memberships=False):
+    def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, include_d9=False, include_memberships=False):
         super(Marc21, self).__init__()
         self.vocabulary = vocabulary
         self.created_by = created_by
         self.vocabulary_code = vocabulary_code
         self.language = language or self.vocabulary.default_language
-        self.include_extras = include_extras
+        self.include_d9 = include_d9
         self.include_memberships = include_memberships
 
     def serialize(self):
@@ -353,7 +360,7 @@ class Marc21(Adapter):
                             sf_term = component.prefLabel[lang]
                             out_term.append([sf, sf_term.value])
 
-                            if self.include_extras:
+                            if self.include_d9 == 'complex':
                                 out_term.append(['9', 'rank=preferred'])
                                 out_term.append(['9', 'language=' + lang])
 
@@ -372,7 +379,9 @@ class Marc21(Adapter):
                             tag,
                             ['a', term.value],
                         ]
-                        if self.include_extras:
+                        if self.include_d9 == 'simple' and lang != self.language.alpha2:
+                            out_term.append(['9', lang3Map[lang] + '1'])
+                        elif self.include_d9 == 'complex':
                             out_term.append(['9', 'rank=preferred'])
                             out_term.append(['9', 'language=' + lang])
                         add_term(out_term)
@@ -392,7 +401,9 @@ class Marc21(Adapter):
                             ]
                             term_value = term.value
 
-                            if self.include_extras:
+                            if self.include_d9 == 'simple':
+                                out_term.append(['9', lang3Map[lang]])
+                            elif self.include_d9 == 'complex':
                                 out_term.append(['9', 'rank=alternative'])
                                 out_term.append(['9', 'language=' + lang])
                             add_term(out_term)
@@ -442,6 +453,13 @@ class Marc21(Adapter):
                         tag = self.tag_from_type(500, rel['type'][0])
                         # Note: rel['type'][0] can be 'KnuteTerm'! How to handle?
                         with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                            builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
+                            builder.subfield(self.global_cn(value), code='0')
+
+                    # Generelle se-henvisninger
+                    for value in resource.get('plusUseTerm', []):
+                        rel = resources.get(id=value)
+                        with builder.datafield(tag='260', ind1=' ', ind2=' '):
                             builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
                             builder.subfield(self.global_cn(value), code='0')
 
