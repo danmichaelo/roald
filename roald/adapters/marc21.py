@@ -214,7 +214,7 @@ class Marc21(Adapter):
                 f15 = 'a'  # Heading use-subject added entry (6XX fields): Appropriate
 
                 if resourceType == 'LinkingTerm':
-                    f09 = 'e'  # Node label ???
+                    f09 = 'a'  # Bibsys suggested "e" in their conversion schema. Doesn't work with CCMapper though, so for now we keep "a".
                     f15 = 'b'  # Not appropriate
 
                 if resourceType == 'SplitNonPreferredTerm':
