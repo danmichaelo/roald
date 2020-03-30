@@ -370,9 +370,12 @@ MARC21-serialisering
     er dette kodet med `55X` med `$w g`, som ikke er helt ideelt. I SKOS er det kodet som `SKOS.member`.
   * Eksempel: `550 ## $a Digital humaniora $w h $0 (No-TrBIB)HUME27908`
 
-* **680** Public General Note
-  * Noter og definisjoner.
-  * Eksempel: `680 ## $i Programmeringsspråk` 
+* **667** Nonpublic General Note
+  * Lukkede bemerkninger
+
+* **677** Definition
+  * Definisjoner.
+  * Eksempel: `677 ## $a Programmeringsspråk` 
 
 * **748/750/751/755** Heading Linking Entries
   * Mappinger til andre vokabularer (bortsett fra Dewey, som havner i 083)

@@ -466,15 +466,15 @@ class Marc21(Adapter):
                             builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
                             builder.subfield(self.global_cn(value), code='0')
 
-                # 680 Notes
+                # 667 Nonpublic General Note
                 for value in resource.get('editorialNote', []):
-                    with builder.datafield(tag='680', ind1=' ', ind2=' '):
-                        builder.subfield(value, code='i')
+                    with builder.datafield(tag='667', ind1=' ', ind2=' '):
+                        builder.subfield(value, code='a')
 
-                # 680 Notes (Definition)
+                # 677 Definition
                 for lang, value in resource.get('definition', {}).items():
-                    with builder.datafield(tag='680', ind1=' ', ind2=' '):
-                        builder.subfield(value, code='i')
+                    with builder.datafield(tag='677', ind1=' ', ind2=' '):
+                        builder.subfield(value, code='a')
 
                 # 7XX Heading Linking Entries-General Information
                 for ma in sorted(omappings, key=lambda k: '{},{}'.format(k['vocab'], k['id'])):
