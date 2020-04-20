@@ -62,8 +62,13 @@ class Marc21(Adapter):
             for x in c.get('broader', []):
                 self.narrower[x] = self.narrower.get(x, []) + [c['id']]
             if self.include_memberships and not c.get('deprecated'):
+
                 for x in c.get('memberOf', []):
                     self.narrower[x] = self.narrower.get(x, []) + [c['id']]
+
+                for x in c.get('superOrdinate', []):
+                    self.narrower[x] = self.narrower.get(x, []) + [c['id']]
+
 
         # Make a dictionary of 'replaces' (inverse 'replacedBy') for fast lookup
         self.replaces = {}
@@ -421,7 +426,8 @@ class Marc21(Adapter):
                     'Topic': '550',
                     'Geographic': '551',
                     'GenreForm': '555',
-                    'LinkingTerm': '550',  # @TODO: ???
+                    'LinkingTerm': '550',  # Knuteterm
+                    'Collection': '550',  # Fasettindikator
                     'SplitNonPreferredTerm': '550',  # @TODO: ???
                     'Category': '550',
                 }
@@ -443,6 +449,16 @@ class Marc21(Adapter):
                         else:
                             logger.warn('Cannot serialize "%s" <broader> "%s", because the latter has a unknown type.', value, rel['id'])
 
+                    # Include facet super ordinate as broader per discussion with Humord 2020-04-20
+                    if self.include_memberships:
+                        for value in resource.get('superOrdinate', []):
+                            rel = resources.get(id=value)
+                            tag = self.tag_from_type(500, rel['type'][0])
+                            with builder.datafield(tag=tag, ind1=' ', ind2=' '):
+                                builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
+                                builder.subfield('g', code='w')
+                                builder.subfield(self.global_cn(value), code='0')
+
                     for value in self.narrower.get(resource['id'], []):
                         rel = resources.get(id=value)
                         rel_type = rel['type'][0]
@@ -454,7 +470,6 @@ class Marc21(Adapter):
                     for value in resource.get('related', []):
                         rel = resources.get(id=value)
                         tag = self.tag_from_type(500, rel['type'][0])
-                        # Note: rel['type'][0] can be 'KnuteTerm'! How to handle?
                         with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                             builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
                             builder.subfield(self.global_cn(value), code='0')
