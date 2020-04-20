@@ -214,6 +214,7 @@ class Bibsys(object):
             else:
                 broader = resources[ids[node.text]]
                 if isinstance(broader, Collection):
+                    resource.add('memberOf', broader['id'])
                     broader.add('member', resource['id'])
                 if isinstance(broader, Concept) and isinstance(resource, Collection):
                     resource.add('superOrdinate', broader['id'])
