@@ -39,7 +39,8 @@ class Marc21(Adapter):
     language = None  # Default language code for 040 $b
     include_d9 = None  # Whether to include $9 language and $9 rank codes
 
-    def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, include_d9=False, include_memberships=False):
+    def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, include_d9=False,
+                 include_memberships=False, include_narrower=False):
         super(Marc21, self).__init__()
         self.vocabulary = vocabulary
         self.created_by = created_by
@@ -47,6 +48,7 @@ class Marc21(Adapter):
         self.language = language or self.vocabulary.default_language
         self.include_d9 = include_d9
         self.include_memberships = include_memberships
+        self.include_narrower = include_narrower
 
     def serialize(self):
 
@@ -58,16 +60,17 @@ class Marc21(Adapter):
 
         # Make a dictionary of 'narrower' (reverse 'broader') for fast lookup
         self.narrower = {}
-        for c in self.vocabulary.resources:
-            for x in c.get('broader', []):
-                self.narrower[x] = self.narrower.get(x, []) + [c['id']]
-            if self.include_memberships and not c.get('deprecated'):
-
-                for x in c.get('memberOf', []):
+        if self.include_narrower:
+            for c in self.vocabulary.resources:
+                for x in c.get('broader', []):
                     self.narrower[x] = self.narrower.get(x, []) + [c['id']]
+                if self.include_memberships and not c.get('deprecated'):
 
-                for x in c.get('superOrdinate', []):
-                    self.narrower[x] = self.narrower.get(x, []) + [c['id']]
+                    for x in c.get('memberOf', []):
+                        self.narrower[x] = self.narrower.get(x, []) + [c['id']]
+
+                    for x in c.get('superOrdinate', []):
+                        self.narrower[x] = self.narrower.get(x, []) + [c['id']]
 
 
         # Make a dictionary of 'replaces' (inverse 'replacedBy') for fast lookup
