@@ -62,14 +62,21 @@ class Marc21(Adapter):
         self.narrower = {}
         if self.include_narrower:
             for c in self.vocabulary.resources:
-                for x in c.get('broader', []):
-                    self.narrower[x] = self.narrower.get(x, []) + [c['id']]
+
+                has_member_of = False
+
                 if self.include_memberships and not c.get('deprecated'):
 
                     for x in c.get('memberOf', []):
+                        has_member_of = True
                         self.narrower[x] = self.narrower.get(x, []) + [c['id']]
 
                     for x in c.get('superOrdinate', []):
+                        hasSuperOrdinates = True
+                        self.narrower[x] = self.narrower.get(x, []) + [c['id']]
+
+                if not has_member_of:
+                    for x in c.get('broader', []):
                         self.narrower[x] = self.narrower.get(x, []) + [c['id']]
 
 
@@ -441,26 +448,29 @@ class Marc21(Adapter):
                     if self.include_memberships:
                         broader += resource.get('memberOf', [])
 
-                    for value in broader:
-                        rel = resources.get(id=value)
-                        rel_type = rel['type'][0]
-                        if rel_type in tags:
-                            with builder.datafield(tag=tags[rel_type], ind1=' ', ind2=' '):
-                                builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
-                                builder.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
-                                builder.subfield(self.global_cn(value), code='0')
-                        else:
-                            logger.warn('Cannot serialize "%s" <broader> "%s", because the latter has a unknown type.', value, rel['id'])
-
                     # Include facet super ordinate as broader per discussion with Humord 2020-04-20
+                    has_member_of = False
                     if self.include_memberships:
-                        for value in resource.get('superOrdinate', []):
+                        for value in resource.get('memberOf', []):
+                            has_member_of = True
                             rel = resources.get(id=value)
                             tag = self.tag_from_type(500, rel['type'][0])
                             with builder.datafield(tag=tag, ind1=' ', ind2=' '):
                                 builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
                                 builder.subfield('g', code='w')
                                 builder.subfield(self.global_cn(value), code='0')
+
+                    if not has_member_of:
+                        for value in broader:
+                            rel = resources.get(id=value)
+                            rel_type = rel['type'][0]
+                            if rel_type in tags:
+                                with builder.datafield(tag=tags[rel_type], ind1=' ', ind2=' '):
+                                    builder.subfield(rel.prefLabel[self.language.alpha2].value, code='a')
+                                    builder.subfield('g', code='w')  # Ref: http://www.loc.gov/marc/authority/adtracing.html
+                                    builder.subfield(self.global_cn(value), code='0')
+                            else:
+                                logger.warn('Cannot serialize "%s" <broader> "%s", because the latter has a unknown type.', value, rel['id'])
 
                     for value in self.narrower.get(resource['id'], []):
                         rel = resources.get(id=value)
