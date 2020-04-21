@@ -322,8 +322,11 @@ class Skos(Adapter):
         related = [resources.get(id=value) for value in resource.get('related', [])]
         for c in related:
             rel_uri = URIRef(self.vocabulary.uri(c['id']))
-
-            graph.add((uri, SKOS.related, rel_uri))
+            if 'Collection' in resource.get('type', []):
+                logger.warn(u'Skipping <%s> skos:related <%s> because the latter is a collection',
+                            uri, rel_uri)
+            else:
+                graph.add((uri, SKOS.related, rel_uri))
 
         related = [resources.get(id=value) for value in resource.get('plusUseTerm', [])]
         for c in related:

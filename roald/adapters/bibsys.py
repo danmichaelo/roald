@@ -194,8 +194,9 @@ class Bibsys(object):
             try:
                 related = resources[ids[node.text]]
                 if isinstance(related, Collection):
-                    logger.warn(u'Cannot convert relation <%s %s> RT <%s %s> because the latter is a collection',
+                    logger.warn(u'Relation <%s %s> RT <%s %s>, where the latter is a collection, is not allowed in SKOS',
                                 tid, resource.get('prefLabel.nb').value, related.id, related.get('prefLabel.nb').value)
+                    resource.add('related', related['id'])
                 else:
                     resource.add('related', related['id'])
             except KeyError:
