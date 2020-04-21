@@ -448,6 +448,7 @@ class Marc21(Adapter):
                     broader = copy.copy(resource.get('broader', []))
                     if self.include_memberships:
                         broader += resource.get('memberOf', [])
+                        broader += resource.get('superOrdinate', [])
 
                     # Include facet super ordinate as broader per discussion with Humord 2020-04-20
                     has_member_of = False
