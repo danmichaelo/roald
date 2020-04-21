@@ -40,7 +40,7 @@ class Marc21(Adapter):
     include_d9 = None  # Whether to include $9 language and $9 rank codes
 
     def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, include_d9=False,
-                 include_memberships=False, include_narrower=False):
+                 include_memberships=False, include_narrower=False, include_uris=True):
         super(Marc21, self).__init__()
         self.vocabulary = vocabulary
         self.created_by = created_by
@@ -49,6 +49,7 @@ class Marc21(Adapter):
         self.include_d9 = include_d9
         self.include_memberships = include_memberships
         self.include_narrower = include_narrower
+        self.include_uris = include_uris
 
     def serialize(self):
 
@@ -251,7 +252,7 @@ class Marc21(Adapter):
                 builder.controlfield(field008, tag='008')
 
                 # 024 Other Standard Identifier
-                if uri is not None:
+                if self.include_uris and uri is not None:
                     with builder.datafield(tag='024', ind1='7', ind2=' '):
                         builder.subfield(uri, code='a')
                         builder.subfield('uri', code='2')
