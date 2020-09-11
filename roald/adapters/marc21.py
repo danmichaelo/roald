@@ -550,71 +550,80 @@ class Marc21(Adapter):
             '155': 'GenreForm',
         }
 
-        f1xx_fields = [
-            typemap[x]
-            for x in typemap
-            if len(rec.xpath('./datafield[@tag="%s"]' % x, namespaces={'marc': 'http://www.loc.gov/MARC21/slim'}))
-        ]
-        if len(f1xx_fields) == 0:
-            raise Exception('Invalid record')  
-        concept_type = f1xx_fields[0]      
+
+        rec_id = rec.xpath('./datafield[@tag="035"]/subfield[@code="a"]', namespaces={'marc': 'http://www.loc.gov/MARC21/slim'})[0].text
+
+        try:
+
+            f1xx_fields = [
+                typemap[x]
+                for x in typemap
+                if len(rec.xpath('./datafield[@tag="%s"]' % x, namespaces={'marc': 'http://www.loc.gov/MARC21/slim'}))
+            ]
+            if len(f1xx_fields) == 0:
+                raise Exception('Invalid record')
+            concept_type = f1xx_fields[0]
+
+            f005_field = rec.xpath('./controlfield[@tag="005"]', namespaces={'marc': 'http://www.loc.gov/MARC21/slim'})
+            if len(f005_field) == 0:
+                raise Exception('ERR: No 005 field')
+            f005 = f005_field[0].text
+            modified = datetime.strptime(f005[:8], '%Y%m%d')
+
+            f008_field = rec.xpath('./controlfield[@tag="008"]', namespaces={'marc': 'http://www.loc.gov/MARC21/slim'})
+            if len(f008_field) == 0:
+                raise Exception('ERR: No 008 field')
+            f008 = f008_field[0].text
+
+            if f008[9] == 'a' and f008[15] == 'b':
+                concept_type = 'LinkingTerm'
+            elif f008[9] == 'b' and f008[15] == 'b':
+                concept_type = 'SplitNonPreferredTerm'
+            elif f008[9] == 'e' and f008[15] == 'b':
+                concept_type = 'Collection'
+
+            # ---
+
+            if concept_type == 'Collection':
+                obj = Collection()
+            else:
+                obj = Concept(concept_type)
+            obj.set('modified', modified.strftime('%Y-%m-%d'))
+
+            ldr = rec.find('leader').text.strip()  # {http://www.loc.gov/MARC21/slim}
+            if ldr[5] != 'n':
+                obj.set('deprecated', modified.strftime('%Y-%m-%d'))
+
+            for field in rec.findall('datafield'):  # {http://www.loc.gov/MARC21/slim}
+                tag = field.get('tag')
+                sf = OrderedDict(
+                    (subfield.get('code'), subfield.text.strip())
+                    for subfield in field.findall('subfield')  # {http://www.loc.gov/MARC21/slim}
+                )
+                if tag == '035' and '(NO-TrBIB)' in sf['a']:
+                    obj.set('id', sf['a'].replace('(NO-TrBIB)', ''))
+                elif tag.startswith('1'):
+                    obj.set('prefLabel.nb', Label(sf['a']))
+                elif tag.startswith('4'):
+                    if sf.get('9') == 'eng1':
+                        obj.set('prefLabel.en', Label(sf['a']))
+                    elif sf.get('9') == 'eng':
+                        obj.add('altLabel.en', Label(sf['a']))
+                    else:
+                        obj.add('altLabel.nb', Label(sf['a']))
+                elif tag.startswith('5'):
+                    if sf.get('w') == 'g':
+                        obj.add('broader', sf['0'].replace('(NO-TrBIB)', ''))
+                    else:
+                        obj.add('related', sf['0'].replace('(NO-TrBIB)', ''))
+                elif tag == '667':
+                    obj.add('editorialNote', sf['a'])
+                elif tag == '677':
+                    obj.add('definition', sf['a'])
         
-        f005_field = rec.xpath('./controlfield[@tag="005"]', namespaces={'marc': 'http://www.loc.gov/MARC21/slim'})
-        if len(f005_field) == 0:
-            raise Exception('ERR: No 005 field')
-        f005 = f005_field[0].text
-        modified = datetime.strptime(f005[:8], '%Y%m%d')
-
-        f008_field = rec.xpath('./controlfield[@tag="008"]', namespaces={'marc': 'http://www.loc.gov/MARC21/slim'})
-        if len(f008_field) == 0:
-            raise Exception('ERR: No 008 field')
-        f008 = f008_field[0].text
-
-        if f008[9] == 'a' and f008[15] == 'b':
-            concept_type = 'LinkingTerm'
-        elif f008[9] == 'b' and f008[15] == 'b':
-            concept_type = 'SplitNonPreferredTerm'
-        elif f008[9] == 'e' and f008[15] == 'b':
-            concept_type = 'Collection'
-
-        # ---
-
-        if concept_type == 'Collection':
-            obj = Collection()
-        else:
-            obj = Concept(concept_type)
-        obj.set('modified', modified.strftime('%Y-%m-%d'))
-
-        ldr = rec.find('leader').text.strip()  # {http://www.loc.gov/MARC21/slim}
-        if ldr[5] != 'n':
-            obj.set('deprecated', modified.strftime('%Y-%m-%d'))
-
-        for field in rec.findall('datafield'):  # {http://www.loc.gov/MARC21/slim}
-            tag = field.get('tag')
-            sf = OrderedDict(
-                (subfield.get('code'), subfield.text.strip())
-                for subfield in field.findall('subfield')  # {http://www.loc.gov/MARC21/slim}
-            )
-            if tag == '035' and '(NO-TrBIB)' in sf['a']:
-                obj.set('id', sf['a'].replace('(NO-TrBIB)', ''))
-            elif tag.startswith('1'):
-                obj.set('prefLabel.nb', Label(sf['a']))
-            elif tag.startswith('4'):
-                if sf.get('9') == 'eng1':
-                    obj.set('prefLabel.en', Label(sf['a']))
-                elif sf.get('9') == 'eng':
-                    obj.add('altLabel.en', Label(sf['a']))
-                else:
-                    obj.add('altLabel.nb', Label(sf['a']))
-            elif tag.startswith('5'):
-                if sf.get('w') == 'g':
-                    obj.add('broader', sf['0'].replace('(NO-TrBIB)', ''))
-                else:
-                    obj.add('related', sf['0'].replace('(NO-TrBIB)', ''))
-            elif tag == '667':
-                obj.add('editorialNote', sf['a'])
-            elif tag == '677':
-                obj.add('definition', sf['a'])
+        except Exception as err:
+            print("FAILED TO IMPORT %s" % rec_id)
+            raise
 
         # -------------
         # TODO
