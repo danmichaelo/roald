@@ -57,6 +57,9 @@ class Roald(object):
             Mesh(self.vocabulary).load(filename, **kwargs)
         elif format == 'skos':
             Skos(self.vocabulary).load(filename)
+        elif format == 'marc21':
+            self.vocabulary.default_language = languages.get(alpha2=language)
+            Marc21(self.vocabulary).load(filename, **kwargs)
         else:
             raise ValueError('Unknown format')
 

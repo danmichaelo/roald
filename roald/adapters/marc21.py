@@ -4,13 +4,17 @@ import xmlwitch
 import iso639
 import copy
 import json
+import os
 import logging
+from collections import OrderedDict
+from datetime import datetime
 from six import text_type
+from lxml import etree
 from rdflib import URIRef
 from rdflib.graph import Graph, Literal
 from rdflib.namespace import SKOS
 import re
-
+from ..models.resources import Concept, Collection, Label
 from .adapter import Adapter
 
 logger = logging.getLogger(__name__)
@@ -50,6 +54,22 @@ class Marc21(Adapter):
         self.include_memberships = include_memberships
         self.include_narrower = include_narrower
         self.include_uris = include_uris
+
+    def load(self, filename):
+        language = self.vocabulary.default_language.alpha2
+        resources = []
+        ids = {}  # index lookup hash
+        parents = {}
+        if not os.path.isfile(filename):
+            return {}
+
+        for _, record in etree.iterparse(filename, tag='record'):  # {http://www.loc.gov/MARC21/slim}
+            resource = self.load_record(record)
+            if resource is not None:
+                resources.append(resource)
+            record.clear()
+
+        self.vocabulary.resources.load(resources)
 
     def serialize(self):
 
@@ -197,7 +217,10 @@ class Marc21(Adapter):
             if resourceType == 'Category' and not self.include_memberships:
                 continue
 
-            with builder.record(xmlns='http://www.loc.gov/MARC21/slim', type='Authority'):
+            with builder.record(
+                # xmlns='http://www.loc.gov/MARC21/slim', 
+                type='Authority'
+            ):
 
                 # Fixed leader for all records
                 # Ref: <http://www.loc.gov/marc/uma/pt8-11.html#pt8>
@@ -518,3 +541,85 @@ class Marc21(Adapter):
                     with builder.datafield(tag='750', ind1=' ', ind2='4'):
                         builder.subfield(ma['uri'], code='0')
                         builder.subfield(ma['relation'], code='4')
+
+    def load_record(self, rec):
+        typemap = {
+            '148': 'Temporal',
+            '150': 'Topic',
+            '151': 'Geographic',
+            '155': 'GenreForm',
+        }
+
+        f1xx_fields = [
+            typemap[x]
+            for x in typemap
+            if len(rec.xpath('./datafield[@tag="%s"]' % x, namespaces={'marc': 'http://www.loc.gov/MARC21/slim'}))
+        ]
+        if len(f1xx_fields) == 0:
+            raise Exception('Invalid record')  
+        concept_type = f1xx_fields[0]      
+        
+        f005_field = rec.xpath('./controlfield[@tag="005"]', namespaces={'marc': 'http://www.loc.gov/MARC21/slim'})
+        if len(f005_field) == 0:
+            raise Exception('ERR: No 005 field')
+        f005 = f005_field[0].text
+        modified = datetime.strptime(f005[:8], '%Y%m%d')
+
+        f008_field = rec.xpath('./controlfield[@tag="008"]', namespaces={'marc': 'http://www.loc.gov/MARC21/slim'})
+        if len(f008_field) == 0:
+            raise Exception('ERR: No 008 field')
+        f008 = f008_field[0].text
+
+        if f008[9] == 'a' and f008[15] == 'b':
+            concept_type = 'LinkingTerm'
+        elif f008[9] == 'b' and f008[15] == 'b':
+            concept_type = 'SplitNonPreferredTerm'
+        elif f008[9] == 'e' and f008[15] == 'b':
+            concept_type = 'Collection'
+
+        # ---
+
+        if concept_type == 'Collection':
+            obj = Collection()
+        else:
+            obj = Concept(concept_type)
+        obj.set('modified', modified.strftime('%Y-%m-%d'))
+
+        ldr = rec.find('leader').text.strip()  # {http://www.loc.gov/MARC21/slim}
+        if ldr[5] != 'n':
+            obj.set('deprecated', modified.strftime('%Y-%m-%d'))
+
+        for field in rec.findall('datafield'):  # {http://www.loc.gov/MARC21/slim}
+            tag = field.get('tag')
+            sf = OrderedDict(
+                (subfield.get('code'), subfield.text.strip())
+                for subfield in field.findall('subfield')  # {http://www.loc.gov/MARC21/slim}
+            )
+            if tag == '035' and '(NO-TrBIB)' in sf['a']:
+                obj.set('id', sf['a'].replace('(NO-TrBIB)', ''))
+            elif tag.startswith('1'):
+                obj.set('prefLabel.nb', Label(sf['a']))
+            elif tag.startswith('4'):
+                if sf.get('9') == 'eng1':
+                    obj.set('prefLabel.en', Label(sf['a']))
+                elif sf.get('9') == 'eng':
+                    obj.add('altLabel.en', Label(sf['a']))
+                else:
+                    obj.add('altLabel.nb', Label(sf['a']))
+            elif tag.startswith('5'):
+                if sf.get('w') == 'g':
+                    obj.add('broader', sf['0'].replace('(NO-TrBIB)', ''))
+                else:
+                    obj.add('related', sf['0'].replace('(NO-TrBIB)', ''))
+            elif tag == '667':
+                obj.add('editorialNote', sf['a'])
+            elif tag == '677':
+                obj.add('definition', sf['a'])
+
+        # -------------
+        # TODO
+        # Handle facet memberships, superOrdinate etc.
+        #
+        # SplitNonPreferredTerm: Parse 260 ?
+
+        return obj
