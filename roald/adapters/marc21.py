@@ -619,8 +619,8 @@ class Marc21(Adapter):
                 elif tag == '667':
                     obj.add('editorialNote', sf['a'])
                 elif tag == '677':
-                    obj.add('definition', sf['a'])
-        
+                    obj.set('definition.nb', sf['a'])
+
         except Exception as err:
             print("FAILED TO IMPORT %s" % rec_id)
             raise
