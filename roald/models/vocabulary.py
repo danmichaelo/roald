@@ -38,7 +38,10 @@ class Vocabulary(object):
             return id
         if self._uri_format is None:
             raise Exception('URI format has not been set.')
-        return self._uri_format.format(id=re.sub('[^0-9]', '', id))
+        id = re.sub('[^0-9]', '', id)
+        if len(id) < 1:
+            raise Exception('Encountered concept with no ID')
+        return self._uri_format.format(id=id)
         # Removes the REAL, HUME, SMR prefixes. @TODO: Should probably rather remove these during import.
 
     def id_from_uri(self, uri):
