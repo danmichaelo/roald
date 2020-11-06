@@ -568,7 +568,7 @@ class Marc21(Adapter):
             if len(f005_field) == 0:
                 raise Exception('ERR: No 005 field')
             f005 = f005_field[0].text
-            modified = datetime.strptime(f005[:8], '%Y%m%d')
+            modified = datetime.strptime(f005[:14], '%Y%m%d%H%M%S')
 
             f008_field = rec.xpath('./controlfield[@tag="008"]', namespaces={'marc': 'http://www.loc.gov/MARC21/slim'})
             if len(f008_field) == 0:
@@ -588,7 +588,7 @@ class Marc21(Adapter):
                 obj = Collection()
             else:
                 obj = Concept(concept_type)
-            obj.set('modified', modified.strftime('%Y-%m-%d'))
+            obj.set('modified', modified.strftime('%Y-%m-%dT%H:%M:%S'))
 
             ldr = rec.find('leader').text.strip()  # {http://www.loc.gov/MARC21/slim}
             if ldr[5] != 'n':
