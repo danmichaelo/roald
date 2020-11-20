@@ -4,6 +4,7 @@ import json
 import os
 from iso639 import languages
 import logging
+import requests
 
 from .adapters import Mesh
 from .adapters import Bibsys
@@ -15,6 +16,27 @@ from .models import Vocabulary
 from .export import PreparedExport
 
 logger = logging.getLogger(__name__)
+
+
+class Mailer:
+    def __init__(self, config):
+        self.config = config
+        self.config['reply'] = self.config['reply'] if 'reply' in self.config else self.config['sender']
+    
+    def send(self, subject, body):
+        if self.config is None:
+            logger.info('Mail not configured')
+        else:
+            requests.post(
+                "https://api.mailgun.net/v3/%(domain)s/messages" % self.config,
+                auth=("api", self.config['apikey']),
+                data={"from": self.config['sender'],
+                    "h:Reply-To": self.config['reply'],
+                    "to": self.config['recipients'],
+                    "subject": subject,
+                    "text": body,
+                }
+            )        
 
 
 class Roald(object):
@@ -30,10 +52,11 @@ class Roald(object):
     >>> roald.export('realfagstermer.marc21.xml', format='marc21')
     """
 
-    def __init__(self):
+    def __init__(self, mail_config=None):
         super(Roald, self).__init__()
         self.vocabulary = Vocabulary()
         self.default_language = None
+        self.mailer = Mailer(mail_config)
 
     def load(self, filename, format='roald3', language=None, **kwargs):
         """
@@ -59,7 +82,7 @@ class Roald(object):
             Skos(self.vocabulary).load(filename)
         elif format == 'marc21':
             self.vocabulary.default_language = languages.get(alpha2=language)
-            Marc21(self.vocabulary).load(filename, **kwargs)
+            Marc21(self.vocabulary, mailer=self.mailer).load(filename, **kwargs)
         else:
             raise ValueError('Unknown format')
 

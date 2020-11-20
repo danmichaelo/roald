@@ -6,6 +6,7 @@ import copy
 import json
 import os
 import logging
+import traceback
 from collections import OrderedDict
 from datetime import datetime
 from six import text_type
@@ -44,7 +45,7 @@ class Marc21(Adapter):
     include_d9 = None  # Whether to include $9 language and $9 rank codes
 
     def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, include_d9=False,
-                 include_memberships=False, include_narrower=False, include_uris=True):
+                 include_memberships=False, include_narrower=False, include_uris=True, mailer=None):
         super(Marc21, self).__init__()
         self.vocabulary = vocabulary
         self.created_by = created_by
@@ -54,8 +55,11 @@ class Marc21(Adapter):
         self.include_memberships = include_memberships
         self.include_narrower = include_narrower
         self.include_uris = include_uris
+        self.mailer = mailer
 
-    def load(self, filename):
+    def load(self, filename, vocabulary_code=None):
+        if vocabulary_code is not None:
+            self.vocabulary_code = vocabulary_code
         language = self.vocabulary.default_language.alpha2
         resources = []
         ids = {}  # index lookup hash
@@ -63,11 +67,23 @@ class Marc21(Adapter):
         if not os.path.isfile(filename):
             return {}
 
+        errors = []
+
         for _, record in etree.iterparse(filename, tag='record'):  # {http://www.loc.gov/MARC21/slim}
-            resource = self.load_record(record)
+            resource, err = self.load_record(record)
             if resource is not None:
                 resources.append(resource)
+            if err is not None:
+                errors.append(err)
             record.clear()
+        
+        if len(errors) != 0:
+            hline = '\n\n-----------------------------------------------------\n\n'
+            self.mailer.send(
+                'Importen av %s feila' % self.vocabulary_code,
+                'Følgende poster har problemer:' + hline + hline.join(errors) + hline 
+            )
+            raise Exception("Errors occured during import. Mail sent.")
 
         self.vocabulary.resources.load(resources)
 
@@ -623,7 +639,8 @@ class Marc21(Adapter):
 
         except Exception as err:
             print("FAILED TO IMPORT %s" % rec_id)
-            raise
+            err_str = ''.join(traceback.format_exception(type(err), err, err.__traceback__))
+            return None, "%s could not be imported:\n\n%s" % (rec_id, err_str)
 
         # -------------
         # TODO
@@ -631,4 +648,4 @@ class Marc21(Adapter):
         #
         # SplitNonPreferredTerm: Parse 260 ?
 
-        return obj
+        return obj, None
