@@ -45,7 +45,8 @@ class Marc21(Adapter):
     include_d9 = None  # Whether to include $9 language and $9 rank codes
 
     def __init__(self, vocabulary, created_by=None, vocabulary_code=None, language=None, include_d9=False,
-                 include_memberships=False, include_narrower=False, include_uris=True, mailer=None):
+                 include_memberships=False, include_narrower=False, include_uris=True, mailer=None,
+                 id_validator=None):
         super(Marc21, self).__init__()
         self.vocabulary = vocabulary
         self.created_by = created_by
@@ -56,10 +57,13 @@ class Marc21(Adapter):
         self.include_narrower = include_narrower
         self.include_uris = include_uris
         self.mailer = mailer
+        self.id_validator = id_validator
 
-    def load(self, filename, vocabulary_code=None):
+    def load(self, filename, vocabulary_code=None, id_validator=None):
         if vocabulary_code is not None:
             self.vocabulary_code = vocabulary_code
+        if id_validator is not None:
+            self.id_validator = id_validator
         language = self.vocabulary.default_language.alpha2
         resources = []
         ids = {}  # index lookup hash
@@ -209,9 +213,8 @@ class Marc21(Adapter):
         elif modified is None:
             modified = created
 
-
         if self.vocabulary.uri_format is not None:
-            uri = self.vocabulary.uri(resource.get('id'))
+            uri = self.vocabulary.uri(resource['id'])
         else:
             uri = None
         ddc_matcher = re.compile(r'http://dewey.info/class/(([1-9])--)?([0-9.]+)')
@@ -558,6 +561,13 @@ class Marc21(Adapter):
                         builder.subfield(ma['uri'], code='0')
                         builder.subfield(ma['relation'], code='4')
 
+    def validate_identifier(self, value, field):
+        if self.id_validator is None:
+            return value
+        if not self.id_validator.match(value):
+            raise Exception('Encountered record with empty/invalid ID in %s' % field)
+        return value
+
     def load_record(self, rec):
         typemap = {
             '148': 'Temporal',
@@ -617,7 +627,7 @@ class Marc21(Adapter):
                     for subfield in field.findall('subfield')  # {http://www.loc.gov/MARC21/slim}
                 )
                 if tag == '035' and '(NO-TrBIB)' in sf['a']:
-                    obj.set('id', sf['a'].replace('(NO-TrBIB)', ''))
+                    obj.set('id', self.validate_identifier(sf['a'].replace('(NO-TrBIB)', ''), '035$a'))
                 elif tag.startswith('1'):
                     obj.set('prefLabel.nb', Label(sf['a']))
                 elif tag.startswith('4'):
@@ -629,9 +639,9 @@ class Marc21(Adapter):
                         obj.add('altLabel.nb', Label(sf['a']))
                 elif tag.startswith('5'):
                     if sf.get('w') == 'g':
-                        obj.add('broader', sf['0'].replace('(NO-TrBIB)', ''))
+                        obj.add('broader', self.validate_identifier(sf['0'].replace('(NO-TrBIB)', ''), '5XX$0'))
                     else:
-                        obj.add('related', sf['0'].replace('(NO-TrBIB)', ''))
+                        obj.add('related', self.validate_identifier(sf['0'].replace('(NO-TrBIB)', ''), '5XX$0'))
                 elif tag == '667':
                     obj.add('editorialNote', sf['a'])
                 elif tag == '677':
