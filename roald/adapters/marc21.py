@@ -83,10 +83,11 @@ class Marc21(Adapter):
         
         if len(errors) != 0:
             hline = '\n\n-----------------------------------------------------\n\n'
-            self.mailer.send(
-                'Importen av %s feila' % self.vocabulary_code,
-                'Følgende poster har problemer:' + hline + hline.join(errors) + hline 
-            )
+            if self.mailer is not None:
+                self.mailer.send(
+                    'Importen av %s feila' % self.vocabulary_code,
+                    'Følgende poster har problemer:' + hline + hline.join(errors) + hline 
+                )
             raise Exception("Errors occured during import. Mail sent.")
 
         self.vocabulary.resources.load(resources)

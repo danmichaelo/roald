@@ -56,7 +56,10 @@ class Roald(object):
         super(Roald, self).__init__()
         self.vocabulary = Vocabulary()
         self.default_language = None
-        self.mailer = Mailer(mail_config)
+        if mail_config is not None:
+            self.mailer = Mailer(mail_config)
+        else:
+            self.mailer = None
 
     def load(self, filename, format='roald3', language=None, **kwargs):
         """
@@ -82,7 +85,7 @@ class Roald(object):
             Skos(self.vocabulary).load(filename)
         elif format == 'marc21':
             self.vocabulary.default_language = languages.get(alpha2=language)
-            Marc21(self.vocabulary, mailer=self.mailer).load(filename, **kwargs)
+            Marc21(self.vocabu24lary, mailer=self.mailer).load(filename, **kwargs)
         else:
             raise ValueError('Unknown format')
 
