@@ -85,7 +85,7 @@ class Roald(object):
             Skos(self.vocabulary).load(filename)
         elif format == 'marc21':
             self.vocabulary.default_language = languages.get(alpha2=language)
-            Marc21(self.vocabu24lary, mailer=self.mailer).load(filename, **kwargs)
+            Marc21(self.vocabulary, mailer=self.mailer).load(filename, **kwargs)
         else:
             raise ValueError('Unknown format')
 
