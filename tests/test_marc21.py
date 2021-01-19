@@ -76,6 +76,10 @@ class TestConverter(unittest.TestCase):
         m21 = Marc21(voc)
         self.assertEqual(Resources, type(m21.vocabulary.resources))
 
+        tree = etree.parse(BytesIO(m21.serialize()))
+        c = tree.xpath('count(//m:record)',
+                       namespaces={'m': 'info:lc/xmlns/marcxchange-v1'})
+        self.assertEqual(1, c)
 
     def test_multiple_types(self):
         # A concept with two types should generate two records
@@ -89,5 +93,5 @@ class TestConverter(unittest.TestCase):
         m21 = Marc21(voc)
         tree = etree.parse(BytesIO(m21.serialize()))
         c = tree.xpath('count(//m:record)',
-                       namespaces={'m': 'http://www.loc.gov/MARC21/slim'})
+                       namespaces={'m': 'info:lc/xmlns/marcxchange-v1'})
         self.assertEqual(2, c)
