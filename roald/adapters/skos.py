@@ -60,7 +60,7 @@ class Skos(Adapter):
     }
 
     def __init__(self, vocabulary, include=None, mappings_from=None, add_same_as=None,
-                 with_ccmapper_candidates=False, infer=False):
+                 with_ccmapper_candidates=False, infer=False, infer_top_concepts=False):
         """
             - vocabulary : Vocabulary object
             - include : List of files to include
@@ -82,6 +82,7 @@ class Skos(Adapter):
             self.add_same_as = add_same_as
         self.with_ccmapper_candidates = with_ccmapper_candidates
         self.infer = infer
+        self.infer_top_concepts = infer_top_concepts
 
     def load(self, filename):
         """
@@ -387,6 +388,20 @@ class Skos(Adapter):
         for same_as in self.add_same_as:
             graph.add((uri, OWL.sameAs, URIRef(same_as.format(id=resource['id']))))
 
+    def setup_top_concepts(self, graph):
+        for cs in sorted(graph.subjects(RDF.type, SKOS.ConceptScheme)):
+            for conc in sorted(graph.subjects(SKOS.inScheme, cs)):
+                if (conc, RDF.type, SKOS.Concept) not in graph:
+                    continue  # not a Concept, so can't be a top concept
+                if (conc, RDF.type, LOCAL.SplitNonPreferredTerm) in graph:
+                    continue  # can't be a top concept
+                # check whether it's a top concept
+                broader = graph.value(conc, SKOS.broader, None, any=True)
+                if broader is None:  # yes it is a top concept!
+                    if (cs, SKOS.hasTopConcept, conc) not in graph and (conc, SKOS.topConceptOf, cs) not in graph:
+                        logging.info("Marking loose concept %s as top concept of scheme %s", conc, cs)
+                        graph.add((cs, SKOS.hasTopConcept, conc))
+                        graph.add((conc, SKOS.topConceptOf, cs))
     def skosify_process(self, graph):
         # check hierarchy for problems
         skosify.check.hierarchy_cycles(graph, True)
@@ -394,6 +409,9 @@ class Skos(Adapter):
         skosify.check.hierarchical_redundancy(graph, True)
         # skosify.check.preflabel_uniqueness(graph, 'shortest')
         # skosify.check.label_overlap(graph, True)
+
+        if self.infer_top_concepts:
+            self.setup_top_concepts(graph)
 
         if self.infer:
             rules = [
@@ -411,8 +429,8 @@ class Skos(Adapter):
             for rule in rules:
                 graph.add(rule)
 
-
             skosify.infer.rdfs_properties(graph)
 
             for rule in rules:
                 graph.remove(rule)
+            skosify.infer.skos_topConcept(graph)
