@@ -602,6 +602,8 @@ class Marc21(Adapter):
                 raise Exception('ERR: No 008 field')
             f008 = f008_field[0].text
 
+            created = datetime.strptime(f008[0:6], '%y%m%d')
+
             if f008[9] == 'a' and f008[15] == 'b':
                 concept_type = 'LinkingTerm'
             elif f008[9] == 'b' and f008[15] == 'b':
@@ -615,6 +617,7 @@ class Marc21(Adapter):
                 obj = Collection()
             else:
                 obj = Concept(concept_type)
+            obj.set('created', created.strftime('%Y-%m-%dT%H:%M:%S'))
             obj.set('modified', modified.strftime('%Y-%m-%dT%H:%M:%S'))
 
             ldr = rec.find('leader').text.strip()  # {http://www.loc.gov/MARC21/slim}
