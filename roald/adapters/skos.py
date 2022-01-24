@@ -233,6 +233,14 @@ class Skos(Adapter):
                 out.append(y)
         return out
 
+    def try_resolve_relations(self, resources, resource, key):
+        out = []
+        for value in resource.get(key, []):
+            try:
+                out.append(URIRef(self.vocabulary.uri(resources.get(id=value))))
+            except KeyError:
+                raise Exception('Posten %s referer til en ugyldig ID: %s' % (resource['id'], value))
+
     def convert_resource(self, graph, resource, resources, scheme_uri, default_language):
         uri = URIRef(self.vocabulary.uri(resource['id']))
 
@@ -320,44 +328,33 @@ class Skos(Adapter):
         for x in resource.get('msc', []):
             graph.add((uri, LOCAL.MSC, Literal(x)))
 
-        related = [resources.get(id=value) for value in resource.get('related', [])]
-        for c in related:
-            rel_uri = URIRef(self.vocabulary.uri(c['id']))
+        for other_uri in self.try_resolve_relations(resources, resource, 'related'):
             if 'Collection' in resource.get('type', []):
-                logger.warn(u'Skipping <%s> skos:related <%s> because the latter is a collection',
-                            uri, rel_uri)
+                logger.warn(u'Skipping <%s> skos:related <%s> because the former is a collection',
+                            uri, other_uri)
             else:
-                graph.add((uri, SKOS.related, rel_uri))
+                graph.add((uri, SKOS.related, other_uri))
 
-        related = [resources.get(id=value) for value in resource.get('plusUseTerm', [])]
-        for c in related:
-            rel_uri = URIRef(self.vocabulary.uri(c['id']))
+        for other_uri in self.try_resolve_relations(resources, resource, 'plusUseTerm'):
+            graph.add((uri, LOCAL.plusUseTerm, other_uri))
 
-            graph.add((uri, LOCAL.plusUseTerm, rel_uri))
+        for other_uri in self.try_resolve_relations(resources, resource, 'replacedBy'):
+            graph.add((uri, DCTERMS.isReplacedBy, other_uri))
 
-        replacedBy = [resources.get(id=value) for value in resource.get('replacedBy', [])]
-        for c in replacedBy:
-            rel_uri = URIRef(self.vocabulary.uri(c['id']))
-            graph.add((uri, DCTERMS.isReplacedBy, rel_uri))
+        for other_uri in self.try_resolve_relations(resources, resource, 'member'):
+            graph.add((uri, SKOS.member, other_uri))
 
-        for res_id in resource.get('member', []):
-            graph.add((uri, SKOS.member, URIRef(self.vocabulary.uri(res_id))))
+        for other_uri in self.try_resolve_relations(resources, resource, 'memberOf'):
+            graph.add((other_uri, SKOS.member, uri))
 
-        for res_id in resource.get('memberOf', []):
-            graph.add((URIRef(self.vocabulary.uri(res_id)), SKOS.member, uri))
+        for other_uri in self.try_resolve_relations(resources, resource, 'superOrdinate'):
+            graph.add((uri, ISOTHES.superOrdinate, other_uri))
+            graph.add((other_uri, ISOTHES.subordinateArray, uri))
 
-        for res_id in resource.get('superOrdinate', []):
-            uri2 = URIRef(self.vocabulary.uri(res_id))
-            graph.add((uri, ISOTHES.superOrdinate, uri2))
-            graph.add((uri2, ISOTHES.subordinateArray, uri))
-
-        broader = [resources.get(id=value) for value in resource.get('broader', [])]
-        for c in broader:
-            rel_uri = URIRef(self.vocabulary.uri(c['id']))
-
-            graph.add((uri, SKOS.broader, rel_uri))
+        for other_uri in self.try_resolve_relations(resources, resource, 'broader'):
+            graph.add((uri, SKOS.broader, other_uri))
             if self.options['include_narrower']:
-                graph.add((rel_uri, SKOS.narrower, uri))
+                graph.add((other_uri, SKOS.narrower, uri))
 
         for mapping_type, target_uris in resource.get('mappings', {}).items():
             for target_uri in target_uris:

@@ -114,8 +114,17 @@ class Roald(object):
         return PreparedExport(model)
 
     def export(self, filename, format, **kwargs):
-        prepared = self.prepare_export(format, **kwargs)
-        prepared.write(filename)
+        try:
+            prepared = self.prepare_export(format, **kwargs)
+            prepared.write(filename)
+        except Exception as error:
+            if self.mailer is not None:
+                hline = '\n\n-----------------------------------------------------\n\n'
+                self.mailer.send(
+                    'Eksport av %s feila' % filename,
+                    'Følgende problem oppsto:' + hline + str(error) + hline
+                )
+            raise Exception("Errors occured during import. Mail sent.")
 
     def authorize(self, value):
         # <value> can take a compound heading value like "$a Component1 $x Component2 $x Component3"
