@@ -240,6 +240,7 @@ class Skos(Adapter):
                 out.append(URIRef(self.vocabulary.uri(resources.get(id=value))))
             except KeyError:
                 raise Exception('Posten %s referer til en ugyldig ID: %s' % (resource['id'], value))
+        return out
 
     def convert_resource(self, graph, resource, resources, scheme_uri, default_language):
         uri = URIRef(self.vocabulary.uri(resource['id']))
