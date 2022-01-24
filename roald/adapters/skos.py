@@ -237,7 +237,8 @@ class Skos(Adapter):
         out = []
         for value in resource.get(key, []):
             try:
-                out.append(URIRef(self.vocabulary.uri(resources.get(id=value))))
+                other_resource = resources.get(id=value)
+                out.append(URIRef(self.vocabulary.uri(other_resource.id)))
             except KeyError:
                 raise Exception('Posten %s referer til en ugyldig ID: %s' % (resource['id'], value))
         return out
