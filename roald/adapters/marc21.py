@@ -634,6 +634,9 @@ class Marc21(Adapter):
                     obj.set('id', self.validate_identifier(sf['a'].replace('(NO-TrBIB)', ''), '035$a'))
                 elif tag.startswith('1'):
                     obj.set('prefLabel.nb', Label(sf['a']))
+                elif tag == '260':
+                    obj.add('plusUseTerm', self.validate_identifier(sf['0'].replace('(NO-TrBIB)', ''), '260'))
+
                 elif tag.startswith('4'):
                     if sf.get('9') == 'eng1':
                         obj.set('prefLabel.en', Label(sf['a']))
@@ -659,7 +662,5 @@ class Marc21(Adapter):
         # -------------
         # TODO
         # Handle facet memberships, superOrdinate etc.
-        #
-        # SplitNonPreferredTerm: Parse 260 ?
 
         return obj, None
