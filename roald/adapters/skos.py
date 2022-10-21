@@ -89,7 +89,7 @@ class Skos(Adapter):
         Note: This loader only loads categories and mappings
         """
         graph = Graph()
-        graph.load(filename, format=self.extFromFilename(filename))
+        graph.parse(filename, format=self.extFromFilename(filename))
 
         logger.info('Read %d triples from %s', len(graph), filename)
 
