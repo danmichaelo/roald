@@ -161,7 +161,7 @@ class Skos(Adapter):
 
         for inc in self.include:
             lg0 = len(graph)
-            graph.load(inc, format=self.extFromFilename(inc))
+            graph.parse(inc, format=self.extFromFilename(inc))
             logger.info(' - Included {} triples from {}'.format(len(graph) - lg0, inc))
 
         try:
