@@ -124,7 +124,8 @@ class Roald(object):
                     'Eksport av %s feila' % filename,
                     'Følgende problem oppsto:' + hline + str(error) + hline
                 )
-            raise Exception("Errors occured during import. Mail sent.")
+                raise Exception("Errors occured during import. Mail sent.")
+            raise error
 
     def authorize(self, value):
         # <value> can take a compound heading value like "$a Component1 $x Component2 $x Component3"

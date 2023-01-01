@@ -84,6 +84,12 @@ class Skos(Adapter):
         self.infer = infer
         self.infer_top_concepts = infer_top_concepts
 
+    @staticmethod
+    def get_label(graph: Graph, predicate, lang):
+        for tr in graph.triples((predicate, SKOS.prefLabel, None)):
+            if tr[2].language == lang:
+                return tr[2].value
+
     def load(self, filename):
         """
         Note: This loader only loads categories and mappings
@@ -111,14 +117,15 @@ class Skos(Adapter):
 
         # Load categories
         for tr in graph.triples((None, RDF.type, UOC.Category)):
-            cat_lab = graph.preferredLabel(tr[0], lang='nb')[0][1].value
+            cat_lab = self.get_label(graph, tr[0], 'nb')
+            if cat_lab is None:
+                raise Exception(f'Category not found: {tr[0]}')
             cat_id = '' + tr[0]
 
             cat = Concept().set_type('Category')
             cat.set('id', cat_id)
             cat.set('prefLabel.nb', Label(cat_lab))
             self.vocabulary.resources.load([cat])
-
 
             for tr2 in graph.triples((tr[0], SKOS.member, None)):
                 uri = str(tr2[2])
